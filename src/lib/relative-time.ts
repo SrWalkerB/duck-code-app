@@ -1,6 +1,7 @@
-export function relativeTime(timestamp: number): string {
+export function relativeTime(timestamp: string | number): string {
   const now = Date.now();
-  const diff = now - timestamp;
+  const ts = typeof timestamp === "string" ? new Date(timestamp).getTime() : timestamp;
+  const diff = now - ts;
 
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);

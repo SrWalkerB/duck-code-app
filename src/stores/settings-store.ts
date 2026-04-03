@@ -1,66 +1,90 @@
 import { create } from "zustand";
+import type { ProviderId } from "@/lib/types";
+import { buildDefaultModelsMap, FALLBACK_PROVIDER_CATALOG } from "@/lib/providers";
 
 interface SettingsState {
   theme: "dark" | "light";
-  defaultModel: string;
+  defaultProvider: ProviderId;
+  defaultModels: Record<ProviderId, string>;
   defaultEffort: string;
-  defaultContext: string;
-  defaultPermissionMode: string;
-  showCost: boolean;
 
   setTheme: (theme: "dark" | "light") => void;
-  setDefaultModel: (model: string) => void;
+  setDefaultProvider: (provider: ProviderId) => void;
+  setDefaultModel: (provider: ProviderId, model: string) => void;
   setDefaultEffort: (effort: string) => void;
-  setDefaultContext: (context: string) => void;
-  setDefaultPermissionMode: (mode: string) => void;
-  setShowCost: (show: boolean) => void;
   toggleTheme: () => void;
 }
 
-function loadSettings(): Partial<SettingsState> {
+function loadSettings(): Record<string, unknown> {
   try {
     const raw = localStorage.getItem("duck-codex-settings");
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // ignore
+  }
   return {};
 }
 
 function saveSettings(state: SettingsState) {
   try {
-    localStorage.setItem("duck-codex-settings", JSON.stringify({
-      theme: state.theme,
-      defaultModel: state.defaultModel,
-      defaultEffort: state.defaultEffort,
-      defaultContext: state.defaultContext,
-      defaultPermissionMode: state.defaultPermissionMode,
-      showCost: state.showCost,
-    }));
-  } catch { /* ignore */ }
-}
-
-function applyTheme(theme: "dark" | "light") {
-  const html = document.documentElement;
-  if (theme === "dark") {
-    html.classList.add("dark");
-  } else {
-    html.classList.remove("dark");
+    localStorage.setItem(
+      "duck-codex-settings",
+      JSON.stringify({
+        theme: state.theme,
+        defaultProvider: state.defaultProvider,
+        defaultModels: state.defaultModels,
+        defaultEffort: state.defaultEffort,
+      })
+    );
+  } catch {
+    // ignore
   }
 }
 
+function applyTheme(theme: "dark" | "light") {
+  if (theme === "dark") {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+}
+
+function isProvider(value: unknown): value is ProviderId {
+  return value === "claude" || value === "openai" || value === "codex";
+}
+
 const saved = loadSettings();
+const fallbackModels = buildDefaultModelsMap(FALLBACK_PROVIDER_CATALOG);
+
+const savedDefaultModels =
+  saved.defaultModels && typeof saved.defaultModels === "object"
+    ? (saved.defaultModels as Partial<Record<ProviderId, string>>)
+    : {};
+
+const initialDefaultModels: Record<ProviderId, string> = {
+  claude: savedDefaultModels.claude || fallbackModels.claude,
+  openai: savedDefaultModels.openai || fallbackModels.openai,
+  codex: savedDefaultModels.codex || fallbackModels.codex,
+};
+
+const savedProvider = saved.defaultProvider;
+const initialDefaultProvider: ProviderId = isProvider(savedProvider)
+  ? savedProvider
+  : "openai";
 
 export const useSettingsStore = create<SettingsState>((set, get) => {
-  // Apply saved theme on load
-  const initialTheme = saved.theme || "dark";
+  const initialTheme = saved.theme === "light" ? "light" : "dark";
   applyTheme(initialTheme);
 
   return {
     theme: initialTheme,
-    defaultModel: saved.defaultModel || "claude-sonnet-4-6",
-    defaultEffort: saved.defaultEffort || "medium",
-    defaultContext: saved.defaultContext || "",
-    defaultPermissionMode: saved.defaultPermissionMode || "acceptEdits",
-    showCost: saved.showCost ?? false,
+    defaultProvider: initialDefaultProvider,
+    defaultModels: initialDefaultModels,
+    defaultEffort:
+      typeof saved.defaultEffort === "string" ? saved.defaultEffort : "medium",
 
     setTheme: (theme) => {
       applyTheme(theme);
@@ -68,29 +92,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       saveSettings({ ...get(), theme });
     },
 
-    setDefaultModel: (defaultModel) => {
-      set({ defaultModel });
-      saveSettings({ ...get(), defaultModel });
+    setDefaultProvider: (defaultProvider) => {
+      set({ defaultProvider });
+      saveSettings({ ...get(), defaultProvider });
+    },
+
+    setDefaultModel: (provider, model) => {
+      set((state) => ({
+        defaultModels: { ...state.defaultModels, [provider]: model },
+      }));
+      saveSettings(get());
     },
 
     setDefaultEffort: (defaultEffort) => {
       set({ defaultEffort });
       saveSettings({ ...get(), defaultEffort });
-    },
-
-    setDefaultContext: (defaultContext) => {
-      set({ defaultContext });
-      saveSettings({ ...get(), defaultContext });
-    },
-
-    setDefaultPermissionMode: (defaultPermissionMode) => {
-      set({ defaultPermissionMode });
-      saveSettings({ ...get(), defaultPermissionMode });
-    },
-
-    setShowCost: (showCost) => {
-      set({ showCost });
-      saveSettings({ ...get(), showCost });
     },
 
     toggleTheme: () => {

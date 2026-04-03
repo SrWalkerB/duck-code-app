@@ -1,52 +1,40 @@
 import { create } from "zustand";
-import { invoke } from "@tauri-apps/api/core";
-import type { Project, Thread, Message, ToolUseEvent, ToolResultEvent, ToolActivity } from "@/lib/types";
-import { useSettingsStore } from "@/stores/settings-store";
+import { electronAPI } from "@/lib/electron-api";
+import type {
+  Project,
+  Thread,
+  Message,
+  ProviderCatalogEntry,
+} from "@/lib/types";
+import { FALLBACK_PROVIDER_CATALOG } from "@/lib/providers";
 
 interface AppState {
-  // Data
   projects: Project[];
-  threads: Record<string, Thread[]>; // keyed by projectId
-  messages: Record<string, Message[]>; // keyed by threadId
+  threads: Record<string, Thread[]>;
+  messages: Record<string, Message[]>;
+  providerCatalog: ProviderCatalogEntry[];
 
-  // Active selection
   activeProjectId: string | null;
   activeThreadId: string | null;
+  activeView: "chat" | "settings";
 
-  // Streaming
   isStreaming: boolean;
+  streamingStartedAt: number | null;
+  streamingThreadId: string | null;
+  activeRunId: string | null;
   streamingContent: string;
-  streamingToolUse: string | null;
   streamingError: string | null;
 
-  // View
-  activeView: 'chat' | 'skills';
-  setActiveView: (view: 'chat' | 'skills') => void;
-
-  // Panels
-  activePanel: 'files' | 'git' | null;
-  terminalOpen: boolean;
-  setActivePanel: (panel: 'files' | 'git' | null) => void;
-  toggleTerminal: () => void;
-
-  // Permission mode (per-thread, stored in status bar for now)
-  permissionMode: string;
-  setPermissionMode: (mode: string) => void;
-
-
-  // Tool activities during streaming
-  streamingTools: ToolActivity[];
-  addToolUse: (event: ToolUseEvent) => void;
-  updateToolResult: (event: ToolResultEvent) => void;
-
-  // Actions
   fetchProjects: () => Promise<void>;
+  fetchProviderCatalog: () => Promise<void>;
   fetchThreads: (projectId: string) => Promise<void>;
   fetchMessages: (threadId: string) => Promise<void>;
   setActiveProject: (projectId: string | null) => void;
   setActiveThread: (threadId: string | null) => void;
+  setActiveView: (view: "chat" | "settings") => void;
   addStreamContent: (text: string) => void;
-  setStreamingToolUse: (tool: string | null) => void;
+  setStreamingThreadId: (threadId: string | null) => void;
+  setActiveRunId: (runId: string | null) => void;
   setIsStreaming: (streaming: boolean) => void;
   setStreamingError: (error: string | null) => void;
   clearStream: () => void;
@@ -57,30 +45,44 @@ export const useAppStore = create<AppState>((set, get) => ({
   projects: [],
   threads: {},
   messages: {},
+  providerCatalog: FALLBACK_PROVIDER_CATALOG,
   activeProjectId: null,
   activeThreadId: null,
+  activeView: "chat",
   isStreaming: false,
+  streamingStartedAt: null,
+  streamingThreadId: null,
+  activeRunId: null,
   streamingContent: "",
-  streamingToolUse: null,
   streamingError: null,
-  activeView: 'chat',
-  streamingTools: [],
-  activePanel: null,
-  terminalOpen: false,
-  permissionMode: useSettingsStore.getState().defaultPermissionMode,
 
   fetchProjects: async () => {
     try {
-      const projects = await invoke<Project[]>("list_projects");
+      const projects = (await electronAPI.invoke("project:list")) as Project[];
       set({ projects });
     } catch (err) {
       console.error("Erro ao buscar projetos:", err);
     }
   },
 
+  fetchProviderCatalog: async () => {
+    try {
+      const catalog = (await electronAPI.invoke(
+        "provider:catalog"
+      )) as ProviderCatalogEntry[];
+      if (Array.isArray(catalog) && catalog.length > 0) {
+        set({ providerCatalog: catalog });
+      }
+    } catch (err) {
+      console.error("Erro ao buscar catalogo:", err);
+    }
+  },
+
   fetchThreads: async (projectId: string) => {
     try {
-      const threadsList = await invoke<Thread[]>("list_threads", { projectId });
+      const threadsList = (await electronAPI.invoke("thread:list", {
+        projectId,
+      })) as Thread[];
       set((state) => ({
         threads: { ...state.threads, [projectId]: threadsList },
       }));
@@ -91,7 +93,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   fetchMessages: async (threadId: string) => {
     try {
-      const messagesList = await invoke<Message[]>("list_messages", { threadId });
+      const messagesList = (await electronAPI.invoke("message:list", {
+        threadId,
+      })) as Message[];
       set((state) => ({
         messages: { ...state.messages, [threadId]: messagesList },
       }));
@@ -114,73 +118,43 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  setActiveView: (view) => set({ activeView: view }),
+
   addStreamContent: (text) => {
     set((state) => ({
       streamingContent: state.streamingContent + text,
     }));
   },
 
-  setStreamingToolUse: (tool) => {
-    set({ streamingToolUse: tool });
-  },
+  setStreamingThreadId: (threadId) => set({ streamingThreadId: threadId }),
+  setActiveRunId: (runId) => set({ activeRunId: runId }),
 
   setIsStreaming: (streaming) => {
-    set({ isStreaming: streaming });
-  },
-
-  setStreamingError: (error) => {
-    set({ streamingError: error });
-  },
-
-  setActiveView: (view) => set({ activeView: view }),
-
-  setActivePanel: (panel) =>
     set((state) => ({
-      activePanel: state.activePanel === panel ? null : panel,
-    })),
-  toggleTerminal: () => set((state) => ({ terminalOpen: !state.terminalOpen })),
-  setPermissionMode: (mode) => set({ permissionMode: mode }),
+      isStreaming: streaming,
+      streamingStartedAt: streaming
+        ? state.streamingStartedAt ?? Date.now()
+        : null,
+    }));
+  },
+
+  setStreamingError: (error) => set({ streamingError: error }),
 
   clearStream: () => {
-    set({ streamingContent: "", streamingToolUse: null, streamingError: null, streamingTools: [] });
-  },
-
-  addToolUse: (event) => {
-    set((state) => {
-      // Skip if already exists (CLI sends cumulative events)
-      if (state.streamingTools.some((t) => t.tool_use_id === event.tool_use_id)) {
-        return state;
-      }
-      return {
-        streamingTools: [
-          ...state.streamingTools,
-          {
-            tool_use_id: event.tool_use_id,
-            name: event.name,
-            input: event.input,
-            status: "running",
-          },
-        ],
-      };
+    set({
+      activeRunId: null,
+      streamingThreadId: null,
+      streamingContent: "",
+      streamingError: null,
     });
-  },
-
-  updateToolResult: (event) => {
-    set((state) => ({
-      streamingTools: state.streamingTools.map((t) =>
-        t.tool_use_id === event.tool_use_id
-          ? { ...t, result: event.content, status: "done" as const }
-          : t
-      ),
-    }));
   },
 
   addOptimisticMessage: (message) => {
     set((state) => ({
       messages: {
         ...state.messages,
-        [message.thread_id]: [
-          ...(state.messages[message.thread_id] || []),
+        [message.threadId]: [
+          ...(state.messages[message.threadId] || []),
           message,
         ],
       },

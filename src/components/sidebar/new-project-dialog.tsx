@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { electronAPI } from "@/lib/electron-api";
 import {
   Dialog,
   DialogContent,
@@ -41,8 +41,10 @@ export function NewProjectDialog({
   const fetchProjects = useAppStore((s) => s.fetchProjects);
 
   const handlePickFolder = async () => {
+    console.log("[renderer] handlePickFolder called");
     try {
-      const selected = await invoke<string | null>("pick_folder");
+      const selected = (await electronAPI.invoke("project:pick-folder")) as string | null;
+      console.log("[renderer] pick-folder result:", selected);
       if (selected) {
         setPath(selected);
         if (!name) {
@@ -59,7 +61,7 @@ export function NewProjectDialog({
     if (!name.trim() || !path.trim()) return;
     setLoading(true);
     try {
-      await invoke("create_project", { name: name.trim(), path: path.trim(), color });
+      await electronAPI.invoke("project:create", { name: name.trim(), path: path.trim(), color });
       await fetchProjects();
       onOpenChange(false);
       setName("");
@@ -119,10 +121,10 @@ export function NewProjectDialog({
                 <button
                   key={c}
                   type="button"
-                  className="size-7 rounded-full border-2 transition-all"
+                  className="size-7 rounded-full transition-all ring-offset-background"
                   style={{
                     backgroundColor: c,
-                    borderColor: color === c ? "#fff" : "transparent",
+                    boxShadow: color === c ? `0 0 0 2px var(--background), 0 0 0 4px ${c}` : "none",
                     transform: color === c ? "scale(1.15)" : "scale(1)",
                   }}
                   onClick={() => setColor(c)}

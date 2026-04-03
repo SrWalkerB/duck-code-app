@@ -3,65 +3,69 @@ export interface Project {
   name: string;
   path: string;
   color: string;
-  created_at: number;
-  updated_at: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Thread {
   id: string;
-  project_id: string;
+  projectId: string;
   title: string;
+  provider: ProviderId;
   model: string;
-  reasoning: string;
-  session_id: string | null;
-  created_at: number;
-  updated_at: number;
+  effort: string;
+  sessionId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ProviderId = "claude" | "openai" | "codex";
+
+export interface ProviderModel {
+  label: string;
+  value: string;
+}
+
+export interface ProviderCapabilities {
+  supports_effort: boolean;
+  requires_api_key: boolean;
+}
+
+export interface ProviderCatalogEntry {
+  id: ProviderId;
+  label: string;
+  default_model: string;
+  models: ProviderModel[];
+  capabilities: ProviderCapabilities;
 }
 
 export interface Message {
   id: string;
-  thread_id: string;
+  threadId: string;
   role: "user" | "assistant";
   content: string;
   metadata: string | null;
-  created_at: number;
+  createdAt: string;
 }
 
-// Claude Code CLI stream event types
-export interface StreamEventText {
-  type: "assistant";
-  message: { type: "text"; text: string };
+export interface ChatStreamPayload {
+  runId: string;
+  text: string;
 }
 
-export interface StreamEventToolUse {
-  type: "assistant";
-  message: { type: "tool_use"; name: string; input: Record<string, unknown> };
+export interface ChatCompletePayload {
+  runId: string;
+  text: string;
+  sessionId: string | null;
+  costUsd: number;
+  durationMs: number;
 }
 
-export interface StreamEventResult {
-  type: "result";
-  session_id: string;
-  cost_usd: number;
+export interface ChatErrorPayload {
+  runId: string;
+  message: string;
 }
 
-export type StreamEvent = StreamEventText | StreamEventToolUse | StreamEventResult;
-
-// Interactive event types from Claude CLI stream
-export interface ToolUseEvent {
-  tool_use_id: string;
-  name: string;
-  input: Record<string, unknown>;
-}
-
-export interface ToolResultEvent {
-  tool_use_id: string;
-  content: string;
-}
-
-export interface ToolActivity {
-  tool_use_id: string;
-  name: string;
-  input: Record<string, unknown>;
-  result?: string;
-  status: "running" | "done" | "error";
+export interface ChatDonePayload {
+  runId: string;
 }

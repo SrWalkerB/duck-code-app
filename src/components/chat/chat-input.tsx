@@ -8,23 +8,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-
-const MODELS = [
-  { label: "Opus 4.6", value: "claude-opus-4-6" },
-  { label: "Sonnet 4.6", value: "claude-sonnet-4-6" },
-  { label: "Haiku 4.5", value: "claude-haiku-4-5" },
-];
-
-const CONTEXTS = [
-  { label: "200k", value: "" },
-  { label: "1M", value: "[1m]" },
-];
+import type { ProviderId } from "@/lib/types";
 
 const EFFORTS = [
   { label: "Low", value: "low" },
   { label: "Medium", value: "medium" },
   { label: "High", value: "high" },
-  { label: "Max", value: "max" },
 ];
 
 interface ChatInputProps {
@@ -32,12 +21,15 @@ interface ChatInputProps {
   onStop: () => void;
   isStreaming: boolean;
   disabled?: boolean;
+  provider: ProviderId;
+  providers: { label: string; value: ProviderId }[];
+  models: { label: string; value: string }[];
+  supportsEffort: boolean;
   model: string;
-  context: string;
-  reasoning: string;
+  effort: string;
+  onProviderChange: (provider: ProviderId) => void;
   onModelChange: (model: string) => void;
-  onContextChange: (context: string) => void;
-  onReasoningChange: (reasoning: string) => void;
+  onEffortChange: (effort: string) => void;
 }
 
 export function ChatInput({
@@ -45,12 +37,15 @@ export function ChatInput({
   onStop,
   isStreaming,
   disabled,
+  provider,
+  providers,
+  models,
+  supportsEffort,
   model,
-  context,
-  reasoning,
+  effort,
+  onProviderChange,
   onModelChange,
-  onContextChange,
-  onReasoningChange,
+  onEffortChange,
 }: ChatInputProps) {
   const [value, setValue] = useState("");
   const [images, setImages] = useState<{ file: File; preview: string }[]>([]);
@@ -110,16 +105,19 @@ export function ChatInput({
     }
   };
 
-  // Cleanup object URLs when images are removed
   useEffect(() => {
     return () => {
       images.forEach((img) => URL.revokeObjectURL(img.preview));
     };
   }, [images]);
 
-  const selectedModel = MODELS.find((m) => m.value === model) || MODELS[1];
-  const selectedContext = CONTEXTS.find((c) => c.value === context) || CONTEXTS[0];
-  const selectedEffort = EFFORTS.find((e) => e.value === reasoning) || EFFORTS[1];
+  const selectedProvider =
+    providers.find((p) => p.value === provider) ||
+    providers[0] || { label: "Provider", value: "claude" as ProviderId };
+  const selectedModel =
+    models.find((m) => m.value === model) ||
+    models[0] || { label: model || "Modelo", value: model };
+  const selectedEffort = EFFORTS.find((e) => e.value === effort) || EFFORTS[1];
 
   return (
     <div className="border-t border-border/30 bg-background p-4">
@@ -169,31 +167,32 @@ export function ChatInput({
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => {/* TODO: file dialog */}}
                 className="flex items-center justify-center rounded-md px-1.5 py-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
               >
                 <ImageIcon className="size-4" />
               </button>
               <InlineDropdown
+                label={selectedProvider?.label || "Provider"}
+                items={providers}
+                value={provider}
+                onChange={(value) => onProviderChange(value as ProviderId)}
+              />
+
+              <InlineDropdown
                 label={selectedModel.label}
-                items={MODELS}
+                items={models}
                 value={model}
                 onChange={onModelChange}
               />
 
-              <InlineDropdown
-                label={selectedContext.label}
-                items={CONTEXTS}
-                value={context}
-                onChange={onContextChange}
-              />
-
-              <InlineDropdown
-                label={selectedEffort.label}
-                items={EFFORTS}
-                value={reasoning}
-                onChange={onReasoningChange}
-              />
+              {supportsEffort && (
+                <InlineDropdown
+                  label={selectedEffort.label}
+                  items={EFFORTS}
+                  value={effort}
+                  onChange={onEffortChange}
+                />
+              )}
             </div>
 
             {/* Send / Stop */}
