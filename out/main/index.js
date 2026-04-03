@@ -2,10 +2,11 @@ import { app, ipcMain, BrowserWindow, dialog, shell } from "electron";
 import { join } from "path";
 import { PrismaClient } from "@prisma/client";
 import { randomBytes, createCipheriv, createDecipheriv, scryptSync } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join as join$1 } from "node:path";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, watch } from "node:fs";
+import { join as join$1, relative } from "node:path";
 import os from "node:os";
 import { spawn } from "node:child_process";
+import { readdir } from "node:fs/promises";
 import __cjs_mod__ from "node:module";
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
@@ -41,6 +42,12 @@ async function ensureDatabase() {
       FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
     )
   `);
+  try {
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE threads ADD COLUMN approval_mode TEXT NOT NULL DEFAULT 'suggest'`
+    );
+  } catch {
+  }
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,
@@ -106,7 +113,8 @@ function registerThreadHandlers() {
           title: args.title,
           provider: args.provider ?? "openai",
           model: args.model ?? "gpt-5.1-codex-mini",
-          effort: args.effort ?? "medium"
+          effort: args.effort ?? "medium",
+          approvalMode: args.approvalMode ?? "suggest"
         }
       });
     }
@@ -121,6 +129,7 @@ function registerThreadHandlers() {
           ...args.provider !== void 0 && { provider: args.provider },
           ...args.model !== void 0 && { model: args.model },
           ...args.effort !== void 0 && { effort: args.effort },
+          ...args.approvalMode !== void 0 && { approvalMode: args.approvalMode },
           ...args.sessionId !== void 0 && { sessionId: args.sessionId }
         }
       });
@@ -276,12 +285,26 @@ const PROVIDER_CATALOG = [
       supports_effort: false,
       requires_api_key: false
     }
+  },
+  {
+    id: "claude-code",
+    label: "Claude Code CLI",
+    default_model: "claude-sonnet-4-6",
+    models: [
+      { label: "Opus 4.6", value: "claude-opus-4-6" },
+      { label: "Sonnet 4.6", value: "claude-sonnet-4-6" },
+      { label: "Haiku 4.5", value: "claude-haiku-4-5-20251001" }
+    ],
+    capabilities: {
+      supports_effort: false,
+      requires_api_key: false
+    }
   }
 ];
-const CATALOG$2 = PROVIDER_CATALOG.find((p) => p.id === "claude");
+const CATALOG$1 = PROVIDER_CATALOG.find((p) => p.id === "claude");
 class ClaudeProvider {
   getCatalogEntry() {
-    return CATALOG$2;
+    return CATALOG$1;
   }
   async getApiKeyStatus() {
     return getApiKeyStatus("claude");
@@ -366,7 +389,7 @@ class ClaudeProvider {
     };
   }
 }
-const CATALOG$1 = PROVIDER_CATALOG.find((p) => p.id === "openai");
+const CATALOG = PROVIDER_CATALOG.find((p) => p.id === "openai");
 function mapEffort(effort) {
   switch (effort) {
     case "low":
@@ -379,7 +402,7 @@ function mapEffort(effort) {
 }
 class OpenAiProvider {
   getCatalogEntry() {
-    return CATALOG$1;
+    return CATALOG;
   }
   async getApiKeyStatus() {
     return getApiKeyStatus("openai");
@@ -486,10 +509,17 @@ class OpenAiProvider {
     };
   }
 }
-const CATALOG = PROVIDER_CATALOG.find((p) => p.id === "codex");
-class CodexCliProvider {
+class CliProviderBase {
+  config;
+  catalog;
+  constructor(config) {
+    this.config = config;
+    this.catalog = PROVIDER_CATALOG.find(
+      (p) => p.id === config.id
+    );
+  }
   getCatalogEntry() {
-    return CATALOG;
+    return this.catalog;
   }
   async getApiKeyStatus() {
     return { configured: true, last4: null };
@@ -500,7 +530,7 @@ class CodexCliProvider {
   }
   async testApiKey(_apiKey) {
     return new Promise((resolve, reject) => {
-      const proc = spawn("codex", ["--version"], {
+      const proc = spawn(this.config.command, ["--version"], {
         stdio: ["ignore", "pipe", "pipe"]
       });
       let stdout = "";
@@ -510,29 +540,31 @@ class CodexCliProvider {
       proc.on("error", (err) => {
         reject(
           new Error(
-            `Codex CLI nao encontrado: ${err.message}. Instale com: npm install -g @openai/codex`
+            `${this.config.command} nao encontrado: ${err.message}. ${this.config.installHint}`
           )
         );
       });
       proc.on("close", (code) => {
-        if (code === 0) resolve(`Codex CLI disponivel: ${stdout.trim()}`);
-        else reject(new Error(`Codex CLI retornou codigo ${code}`));
+        if (code === 0)
+          resolve(`${this.config.command} disponivel: ${stdout.trim()}`);
+        else
+          reject(
+            new Error(`${this.config.command} retornou codigo ${code}`)
+          );
       });
     });
   }
+  buildStdinInput(request) {
+    return request.message;
+  }
   async sendMessageStream(request, onChunk, signal) {
     const startedAt = Date.now();
-    const args = [
-      "exec",
-      "--json",
-      "-m",
-      request.model,
-      "--dangerously-bypass-approvals-and-sandbox"
-    ];
+    const args = this.buildArgs(request);
     return new Promise((resolve, reject) => {
-      const proc = spawn("codex", args, {
+      const proc = spawn(this.config.command, args, {
         stdio: ["pipe", "pipe", "pipe"],
-        env: { ...process.env }
+        env: { ...process.env },
+        ...request.projectPath && { cwd: request.projectPath }
       });
       if (signal) {
         if (signal.aborted) {
@@ -542,11 +574,211 @@ class CodexCliProvider {
         }
         signal.addEventListener("abort", () => proc.kill(), { once: true });
       }
-      proc.stdin.write(request.message);
+      proc.stdin.write(this.buildStdinInput(request));
       proc.stdin.end();
+      let stderrOutput = "";
+      proc.stderr.on("data", (chunk) => {
+        stderrOutput += chunk.toString();
+      });
+      proc.on("error", (err) => {
+        onChunk({ type: "error", error: err.message });
+        reject(new Error(`${this.config.command} erro: ${err.message}`));
+      });
+      const resultPromise = this.handleStdout(proc, onChunk);
+      proc.on("close", (code) => {
+        if (code !== 0 && code !== null) {
+          const errMsg = stderrOutput.trim() || `${this.config.command} saiu com codigo ${code}`;
+          onChunk({ type: "error", error: errMsg });
+          reject(new Error(errMsg));
+          return;
+        }
+        resultPromise.then((result) => {
+          onChunk({ type: "done" });
+          resolve({
+            text: result.text,
+            sessionId: result.sessionId,
+            costUsd: 0,
+            durationMs: Date.now() - startedAt
+          });
+        });
+      });
+    });
+  }
+}
+class CodexCliProvider extends CliProviderBase {
+  constructor() {
+    super({
+      id: "codex",
+      command: "codex",
+      installHint: "Instale com: npm install -g @openai/codex"
+    });
+  }
+  buildArgs(request) {
+    const args = ["exec", "--json", "-m", request.model];
+    switch (request.approvalMode) {
+      case "full-auto":
+        args.push("--full-auto");
+        break;
+      case "auto-edit":
+        args.push("--auto-edit");
+        break;
+    }
+    return args;
+  }
+  buildStdinInput(request) {
+    if (!request.history.length) return request.message;
+    const historyText = request.history.map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n\n");
+    return `${historyText}
+
+User: ${request.message}`;
+  }
+  handleStdout(proc, onChunk) {
+    return new Promise((resolve) => {
       let fullText = "";
       let threadId = null;
-      let stderrOutput = "";
+      let lineBuffer = "";
+      proc.stdout.on("data", (chunk) => {
+        lineBuffer += chunk.toString();
+        const lines = lineBuffer.split("\n");
+        lineBuffer = lines.pop() ?? "";
+        for (const line of lines) {
+          this.processLine(line, onChunk, (text) => {
+            fullText += text;
+          }, (id) => {
+            threadId = id;
+          });
+        }
+      });
+      proc.stdout.on("end", () => {
+        if (lineBuffer.trim()) {
+          this.processLine(lineBuffer, onChunk, (text) => {
+            fullText += text;
+          }, (id) => {
+            threadId = id;
+          });
+        }
+        resolve({ text: fullText, sessionId: threadId });
+      });
+    });
+  }
+  processLine(line, onChunk, appendText, setThreadId) {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    let event;
+    try {
+      event = JSON.parse(trimmed);
+    } catch {
+      return;
+    }
+    const eventType = event.type;
+    if (eventType === "item.completed") {
+      const item = event.item;
+      console.log("[codex-cli] item.completed type:", item?.type, "keys:", item ? Object.keys(item).join(",") : "null");
+    } else {
+      console.log("[codex-cli] event:", eventType);
+    }
+    if (eventType === "thread.started" && event.thread_id) {
+      setThreadId(event.thread_id);
+    }
+    if (eventType === "message.delta") {
+      const delta = event.delta;
+      if (delta) {
+        appendText(delta);
+        onChunk({ type: "delta", text: delta });
+      }
+    }
+    if (eventType === "item.completed") {
+      const item = event.item;
+      if (!item) return;
+      const itemType = item.type;
+      if (itemType === "agent_message" && typeof item.text === "string") {
+        appendText(item.text);
+        onChunk({ type: "delta", text: item.text });
+        return;
+      }
+      const summary = this.extractActivitySummary(item);
+      const toolName = item.name || item.tool || itemType || "action";
+      const kind = itemType.includes("result") || itemType.includes("output") ? "tool_result" : "tool_call";
+      onChunk({
+        type: "activity",
+        activity: { kind, tool: toolName, summary }
+      });
+    }
+    if (eventType === "turn.started") {
+      onChunk({
+        type: "activity",
+        activity: { kind: "info", summary: "Iniciando turno..." }
+      });
+    }
+  }
+  extractActivitySummary(item) {
+    const name = item.name || item.tool || item.type || "";
+    const args = item.arguments || item.input;
+    if (typeof args === "string") {
+      try {
+        const parsed = JSON.parse(args);
+        return this.formatArgs(name, parsed);
+      } catch {
+        return args.length > 80 ? `${name}: ${args.slice(0, 80)}...` : `${name}: ${args}`;
+      }
+    }
+    if (args && typeof args === "object") {
+      return this.formatArgs(name, args);
+    }
+    const output = item.output || item.text || item.content || "";
+    if (output && typeof output === "string") {
+      return output.length > 100 ? `${output.slice(0, 100)}...` : output;
+    }
+    return name;
+  }
+  formatArgs(tool, args) {
+    if (args.command) return `${args.command}`;
+    if (args.path) return `${tool}: ${args.path}`;
+    if (args.file_path) return `${tool}: ${args.file_path}`;
+    if (args.pattern) return `${tool}: ${args.pattern}`;
+    if (args.query) return `${tool}: ${args.query}`;
+    const keys = Object.keys(args);
+    if (keys.length > 0) {
+      const first = args[keys[0]];
+      if (typeof first === "string" && first.length < 80) return `${tool}: ${first}`;
+    }
+    return tool;
+  }
+}
+class ClaudeCodeCliProvider extends CliProviderBase {
+  constructor() {
+    super({
+      id: "claude-code",
+      command: "claude",
+      installHint: "Instale com: npm install -g @anthropic-ai/claude-code"
+    });
+  }
+  buildArgs(request) {
+    const args = [
+      "--print",
+      "--output-format",
+      "stream-json",
+      "--model",
+      request.model,
+      "--verbose"
+    ];
+    if (request.sessionId) {
+      args.push("--resume", request.sessionId);
+    }
+    switch (request.approvalMode) {
+      case "full-auto":
+        args.push("--dangerously-skip-permissions");
+        break;
+      case "auto-edit":
+        args.push("--allowedTools", "Edit,Write,Read,Glob,Grep");
+        break;
+    }
+    return args;
+  }
+  handleStdout(proc, onChunk) {
+    return new Promise((resolve) => {
+      let fullText = "";
+      let sessionId = null;
       let lineBuffer = "";
       proc.stdout.on("data", (chunk) => {
         lineBuffer += chunk.toString();
@@ -561,60 +793,53 @@ class CodexCliProvider {
           } catch {
             continue;
           }
-          console.log("[codex-cli] event:", event.type);
-          if (event.type === "thread.started" && event.thread_id) {
-            threadId = event.thread_id;
-          }
-          if (event.type === "item.completed") {
-            const item = event.item;
-            if (item?.type === "agent_message" && typeof item.text === "string") {
-              fullText += item.text;
-              onChunk({ type: "delta", text: item.text });
+          if (event.type === "assistant" || event.type === "content_block_delta") {
+            const msg = event.message;
+            if (msg?.content) {
+              const blocks = msg.content;
+              for (const block of blocks) {
+                if (block.type === "text" && typeof block.text === "string") {
+                  const newText = block.text.slice(fullText.length);
+                  if (newText) {
+                    fullText = block.text;
+                    onChunk({ type: "delta", text: newText });
+                  }
+                }
+              }
             }
           }
-          if (event.type === "message.delta") {
-            const delta = event.delta;
-            if (delta) {
-              fullText += delta;
-              onChunk({ type: "delta", text: delta });
+          if (event.type === "result") {
+            if (typeof event.session_id === "string") {
+              sessionId = event.session_id;
+            }
+            if (typeof event.result === "string" && !fullText) {
+              fullText = event.result;
+              onChunk({ type: "delta", text: event.result });
             }
           }
         }
       });
-      proc.stderr.on("data", (chunk) => {
-        stderrOutput += chunk.toString();
-      });
-      proc.on("error", (err) => {
-        onChunk({ type: "error", error: err.message });
-        reject(new Error(`Codex CLI erro: ${err.message}`));
-      });
-      proc.on("close", (code) => {
+      proc.stdout.on("end", () => {
         if (lineBuffer.trim()) {
           try {
             const event = JSON.parse(lineBuffer.trim());
-            if (event.type === "item.completed") {
-              const item = event.item;
-              if (item?.type === "agent_message" && typeof item.text === "string") {
-                fullText += item.text;
-                onChunk({ type: "delta", text: item.text });
+            if (event.type === "result") {
+              if (typeof event.session_id === "string") {
+                sessionId = event.session_id;
+              }
+              if (typeof event.result === "string" && !fullText) {
+                fullText = event.result;
+                onChunk({ type: "delta", text: event.result });
               }
             }
           } catch {
+            if (!fullText) {
+              fullText = lineBuffer;
+              onChunk({ type: "delta", text: lineBuffer });
+            }
           }
         }
-        if (code !== 0 && code !== null) {
-          const errMsg = stderrOutput.trim() || `Codex CLI saiu com codigo ${code}`;
-          onChunk({ type: "error", error: errMsg });
-          reject(new Error(errMsg));
-          return;
-        }
-        onChunk({ type: "done" });
-        resolve({
-          text: fullText,
-          sessionId: threadId,
-          costUsd: 0,
-          durationMs: Date.now() - startedAt
-        });
+        resolve({ text: fullText, sessionId });
       });
     });
   }
@@ -622,7 +847,8 @@ class CodexCliProvider {
 const providers = {
   claude: new ClaudeProvider(),
   openai: new OpenAiProvider(),
-  codex: new CodexCliProvider()
+  codex: new CodexCliProvider(),
+  "claude-code": new ClaudeCodeCliProvider()
 };
 function getProvider(id) {
   const provider = providers[id];
@@ -680,7 +906,8 @@ function registerMessageHandlers(mainWindow2) {
 }
 async function streamResponse(mainWindow2, threadId, _content, runId) {
   const thread = await prisma.thread.findUniqueOrThrow({
-    where: { id: threadId }
+    where: { id: threadId },
+    include: { project: true }
   });
   const messages = await prisma.message.findMany({
     where: { threadId },
@@ -700,16 +927,24 @@ async function streamResponse(mainWindow2, threadId, _content, runId) {
       {
         model: thread.model,
         effort: thread.effort,
+        approvalMode: thread.approvalMode || "suggest",
         sessionId: thread.sessionId,
         message: _content,
-        history: history.slice(0, -1)
+        history: history.slice(0, -1),
         // exclude the just-added user message (it's in `message`)
+        projectPath: thread.project?.path
       },
       (chunk) => {
         if (chunk.type === "delta" && chunk.text) {
           mainWindow2.webContents.send(`chat:stream:${threadId}`, {
             runId,
             text: chunk.text
+          });
+        }
+        if (chunk.type === "activity" && chunk.activity) {
+          mainWindow2.webContents.send(`chat:activity:${threadId}`, {
+            runId,
+            activity: chunk.activity
           });
         }
       },
@@ -814,12 +1049,126 @@ function registerProviderHandlers() {
     }
   );
 }
+function registerShellHandlers() {
+  ipcMain.handle("shell:open-path", async (_, args) => {
+    await shell.openPath(args.path);
+  });
+  ipcMain.handle("shell:open-url", async (_, args) => {
+    await shell.openExternal(args.url);
+  });
+  ipcMain.handle("shell:open-terminal", async (_, args) => {
+    const platform = process.platform;
+    if (platform === "linux") {
+      for (const term of ["x-terminal-emulator", "gnome-terminal", "konsole", "xterm"]) {
+        try {
+          spawn(term, [], { cwd: args.path, detached: true, stdio: "ignore" }).unref();
+          return;
+        } catch {
+          continue;
+        }
+      }
+    } else if (platform === "darwin") {
+      spawn("open", ["-a", "Terminal", args.path], { detached: true, stdio: "ignore" }).unref();
+    } else if (platform === "win32") {
+      spawn("cmd.exe", ["/c", "start", "cmd.exe"], { cwd: args.path, detached: true, stdio: "ignore" }).unref();
+    }
+  });
+}
+const IGNORE = /* @__PURE__ */ new Set([
+  "node_modules",
+  ".git",
+  ".next",
+  "dist",
+  "out",
+  ".cache",
+  ".turbo",
+  "__pycache__",
+  ".venv",
+  "target"
+]);
+async function listDirectory(dirPath, rootPath, depth = 0) {
+  if (depth > 5) return [];
+  try {
+    const entries = await readdir(dirPath, { withFileTypes: true });
+    const result = [];
+    const sorted = entries.filter((e) => !e.name.startsWith(".") || e.name === ".env").filter((e) => !IGNORE.has(e.name)).sort((a, b) => {
+      if (a.isDirectory() && !b.isDirectory()) return -1;
+      if (!a.isDirectory() && b.isDirectory()) return 1;
+      return a.name.localeCompare(b.name);
+    });
+    for (const entry of sorted) {
+      const fullPath = join$1(dirPath, entry.name);
+      const relPath = relative(rootPath, fullPath);
+      const isDir = entry.isDirectory();
+      const node = {
+        name: entry.name,
+        path: fullPath,
+        relativePath: relPath,
+        isDirectory: isDir
+      };
+      if (isDir) {
+        node.children = await listDirectory(fullPath, rootPath, depth + 1);
+      }
+      result.push(node);
+    }
+    return result;
+  } catch {
+    return [];
+  }
+}
+const activeWatchers = /* @__PURE__ */ new Map();
+function registerFileHandlers(mainWindow2) {
+  ipcMain.handle("files:list", async (_, args) => {
+    return listDirectory(args.path, args.path);
+  });
+  ipcMain.handle("files:read", async (_, args) => {
+    const { readFile } = await import("node:fs/promises");
+    try {
+      const content = await readFile(args.path, "utf-8");
+      return { content, error: null };
+    } catch (err) {
+      return { content: null, error: String(err) };
+    }
+  });
+  ipcMain.handle("files:watch", async (_, args) => {
+    const existing = activeWatchers.get(args.path);
+    if (existing) {
+      existing.close();
+      activeWatchers.delete(args.path);
+    }
+    try {
+      const watcher = watch(args.path, { recursive: true }, (eventType, filename) => {
+        if (!filename) return;
+        const parts = filename.split("/");
+        if (parts.some((p) => IGNORE.has(p) || p.startsWith("."))) return;
+        mainWindow2.webContents.send("files:changed", {
+          eventType,
+          filename,
+          rootPath: args.path
+        });
+      });
+      activeWatchers.set(args.path, watcher);
+      return { watching: true };
+    } catch {
+      return { watching: false };
+    }
+  });
+  ipcMain.handle("files:unwatch", async (_, args) => {
+    const watcher = activeWatchers.get(args.path);
+    if (watcher) {
+      watcher.close();
+      activeWatchers.delete(args.path);
+    }
+  });
+}
 function registerAllHandlers(mainWindow2) {
   registerProjectHandlers();
   registerThreadHandlers();
   registerMessageHandlers(mainWindow2);
   registerDialogHandlers();
   registerProviderHandlers();
+  registerShellHandlers();
+  registerFileHandlers(mainWindow2);
 }
 let mainWindow = null;
 function createWindow() {

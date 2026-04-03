@@ -3,7 +3,7 @@ import { electronAPI } from "@/lib/electron-api";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useAppStore } from "@/stores/app-store";
 import { getProviderEntry } from "@/lib/providers";
-import type { ProviderId } from "@/lib/types";
+import type { ApprovalMode, ProviderId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
@@ -26,6 +26,12 @@ const EFFORTS = [
   { label: "Low", value: "low" },
   { label: "Medium", value: "medium" },
   { label: "High", value: "high" },
+];
+
+const APPROVAL_MODES: { label: string; value: ApprovalMode; description: string }[] = [
+  { label: "Suggest", value: "suggest", description: "Only suggests changes, no execution" },
+  { label: "Auto-edit", value: "auto-edit", description: "Can edit files, asks for commands" },
+  { label: "Full auto", value: "full-auto", description: "Executes everything without asking" },
 ];
 
 interface SettingsScreenProps {
@@ -154,9 +160,11 @@ function ProvidersSection() {
     defaultProvider,
     defaultModels,
     defaultEffort,
+    defaultApprovalMode,
     setDefaultProvider,
     setDefaultModel,
     setDefaultEffort,
+    setDefaultApprovalMode,
   } = useSettingsStore();
 
   const providerInfo = getProviderEntry(providerCatalog, defaultProvider);
@@ -223,6 +231,22 @@ function ProvidersSection() {
             </div>
           </SettingsRow>
         )}
+
+        <SettingsRow
+          label="Default permissions"
+          description="Permission level for new threads."
+        >
+          <div className="flex gap-2">
+            {APPROVAL_MODES.map((a) => (
+              <SegmentButton
+                key={a.value}
+                label={a.label}
+                active={defaultApprovalMode === a.value}
+                onClick={() => setDefaultApprovalMode(a.value)}
+              />
+            ))}
+          </div>
+        </SettingsRow>
       </SettingsCard>
     </div>
   );

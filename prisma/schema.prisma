@@ -25,8 +25,9 @@ model Thread {
   title     String
   provider  String   @default("openai")
   model     String   @default("gpt-5.1-codex-mini")
-  effort    String   @default("medium")
-  sessionId String?  @map("session_id")
+  effort       String   @default("medium")
+  approvalMode String   @default("suggest") @map("approval_mode")
+  sessionId    String?  @map("session_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)

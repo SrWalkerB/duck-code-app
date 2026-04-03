@@ -18,6 +18,7 @@ import {
   ChevronsUpDown,
   ChevronsDownUp,
   SquarePen,
+  PanelLeftClose,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -247,6 +248,17 @@ export function Sidebar() {
     <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-border/50 bg-sidebar-background">
       {/* Top actions — Codex style */}
       <div className="flex flex-col gap-0.5 px-3 pt-3 pb-1">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider px-2">Duck Codex</span>
+          <button
+            type="button"
+            title="Esconder sidebar"
+            onClick={() => useAppStore.getState().setSidebarOpen(false)}
+            className="flex size-6 items-center justify-center rounded-md text-muted-foreground/40 hover:bg-sidebar-accent hover:text-foreground transition-colors"
+          >
+            <PanelLeftClose className="size-3.5" />
+          </button>
+        </div>
         <button
           type="button"
           className="flex items-center gap-3 rounded-md px-2 py-2 text-sm text-foreground transition-colors hover:bg-sidebar-accent"

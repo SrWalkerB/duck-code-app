@@ -7,6 +7,8 @@ export interface Project {
   updatedAt: string;
 }
 
+export type ApprovalMode = "suggest" | "auto-edit" | "full-auto";
+
 export interface Thread {
   id: string;
   projectId: string;
@@ -14,12 +16,13 @@ export interface Thread {
   provider: ProviderId;
   model: string;
   effort: string;
+  approvalMode: ApprovalMode;
   sessionId: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export type ProviderId = "claude" | "openai" | "codex";
+export type ProviderId = "claude" | "openai" | "codex" | "claude-code";
 
 export interface ProviderModel {
   label: string;
@@ -64,6 +67,15 @@ export interface ChatCompletePayload {
 export interface ChatErrorPayload {
   runId: string;
   message: string;
+}
+
+export interface ChatActivityPayload {
+  runId: string;
+  activity: {
+    kind: "tool_call" | "tool_result" | "info";
+    tool?: string;
+    summary: string;
+  };
 }
 
 export interface ChatDonePayload {

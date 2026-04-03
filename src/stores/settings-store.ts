@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ProviderId } from "@/lib/types";
+import type { ApprovalMode, ProviderId } from "@/lib/types";
 import { buildDefaultModelsMap, FALLBACK_PROVIDER_CATALOG } from "@/lib/providers";
 
 interface SettingsState {
@@ -7,11 +7,13 @@ interface SettingsState {
   defaultProvider: ProviderId;
   defaultModels: Record<ProviderId, string>;
   defaultEffort: string;
+  defaultApprovalMode: ApprovalMode;
 
   setTheme: (theme: "dark" | "light") => void;
   setDefaultProvider: (provider: ProviderId) => void;
   setDefaultModel: (provider: ProviderId, model: string) => void;
   setDefaultEffort: (effort: string) => void;
+  setDefaultApprovalMode: (mode: ApprovalMode) => void;
   toggleTheme: () => void;
 }
 
@@ -37,6 +39,7 @@ function saveSettings(state: SettingsState) {
         defaultProvider: state.defaultProvider,
         defaultModels: state.defaultModels,
         defaultEffort: state.defaultEffort,
+        defaultApprovalMode: state.defaultApprovalMode,
       })
     );
   } catch {
@@ -53,7 +56,7 @@ function applyTheme(theme: "dark" | "light") {
 }
 
 function isProvider(value: unknown): value is ProviderId {
-  return value === "claude" || value === "openai" || value === "codex";
+  return value === "claude" || value === "openai" || value === "codex" || value === "claude-code";
 }
 
 const saved = loadSettings();
@@ -68,6 +71,7 @@ const initialDefaultModels: Record<ProviderId, string> = {
   claude: savedDefaultModels.claude || fallbackModels.claude,
   openai: savedDefaultModels.openai || fallbackModels.openai,
   codex: savedDefaultModels.codex || fallbackModels.codex,
+  "claude-code": savedDefaultModels["claude-code"] || fallbackModels["claude-code"],
 };
 
 const savedProvider = saved.defaultProvider;
@@ -85,6 +89,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     defaultModels: initialDefaultModels,
     defaultEffort:
       typeof saved.defaultEffort === "string" ? saved.defaultEffort : "medium",
+    defaultApprovalMode:
+      (saved.defaultApprovalMode as ApprovalMode) || "suggest",
 
     setTheme: (theme) => {
       applyTheme(theme);
@@ -107,6 +113,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     setDefaultEffort: (defaultEffort) => {
       set({ defaultEffort });
       saveSettings({ ...get(), defaultEffort });
+    },
+
+    setDefaultApprovalMode: (defaultApprovalMode) => {
+      set({ defaultApprovalMode });
+      saveSettings({ ...get(), defaultApprovalMode });
     },
 
     toggleTheme: () => {

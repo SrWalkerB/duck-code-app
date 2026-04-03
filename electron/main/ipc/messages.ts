@@ -1,7 +1,7 @@
 import { ipcMain, type BrowserWindow } from "electron";
 import { prisma } from "../services/prisma.js";
 import { getProvider } from "../services/providers/factory.js";
-import type { ApiProviderId, ProviderHistoryMessage } from "../services/providers/types.js";
+import type { ApiProviderId, ApprovalMode, ProviderHistoryMessage } from "../services/providers/types.js";
 
 const activeStreams = new Map<string, AbortController>();
 
@@ -62,6 +62,7 @@ async function streamResponse(
 ): Promise<void> {
   const thread = await prisma.thread.findUniqueOrThrow({
     where: { id: threadId },
+    include: { project: true },
   });
 
   const messages = await prisma.message.findMany({
@@ -87,15 +88,23 @@ async function streamResponse(
       {
         model: thread.model,
         effort: thread.effort,
+        approvalMode: (thread.approvalMode || "suggest") as ApprovalMode,
         sessionId: thread.sessionId,
         message: _content,
         history: history.slice(0, -1), // exclude the just-added user message (it's in `message`)
+        projectPath: thread.project?.path,
       },
       (chunk) => {
         if (chunk.type === "delta" && chunk.text) {
           mainWindow.webContents.send(`chat:stream:${threadId}`, {
             runId,
             text: chunk.text,
+          });
+        }
+        if (chunk.type === "activity" && chunk.activity) {
+          mainWindow.webContents.send(`chat:activity:${threadId}`, {
+            runId,
+            activity: chunk.activity,
           });
         }
       },

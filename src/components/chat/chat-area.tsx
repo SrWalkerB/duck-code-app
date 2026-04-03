@@ -5,8 +5,8 @@ import { useAppStore } from "@/stores/app-store";
 import { useChat } from "@/hooks/use-chat";
 import { MessageBubble, StreamingBubble } from "./message-bubble";
 import { ChatInput } from "./chat-input";
-import type { ProviderId, Thread } from "@/lib/types";
-import { Sparkles, KeyRound } from "lucide-react";
+import type { ApprovalMode, ProviderId, Thread } from "@/lib/types";
+import { Sparkles, KeyRound, FolderOpen, Globe, Terminal, PanelRight, PanelLeft } from "lucide-react";
 import { getProviderEntry } from "@/lib/providers";
 
 export function ChatArea() {
@@ -19,6 +19,9 @@ export function ChatArea() {
     streamingStartedAt,
     streamingThreadId,
     providerCatalog,
+    sidebarOpen,
+    setSidebarOpen,
+    streamingActivities,
   } = useAppStore();
 
   const {
@@ -32,6 +35,7 @@ export function ChatArea() {
   const [provider, setProvider] = useState<ProviderId>("openai");
   const [model, setModel] = useState("gpt-5.1-codex-mini");
   const [effort, setEffort] = useState("medium");
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>("suggest");
   const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null);
   const [streamClock, setStreamClock] = useState(() => Date.now());
   const isStreamingThisThread = isStreaming && streamingThreadId === activeThreadId;
@@ -92,6 +96,7 @@ export function ChatArea() {
       setProvider(activeThread.provider || "openai");
       setModel(activeThread.model);
       setEffort(activeThread.effort || "medium");
+      setApprovalMode((activeThread.approvalMode as ApprovalMode) || "suggest");
     }
   }, [activeThread]);
 
@@ -165,6 +170,23 @@ export function ChatArea() {
     [activeThreadId, providerInfo.capabilities.supports_effort]
   );
 
+  const handleApprovalModeChange = useCallback(
+    async (newMode: ApprovalMode) => {
+      setApprovalMode(newMode);
+      if (activeThreadId) {
+        try {
+          await electronAPI.invoke("thread:update", {
+            id: activeThreadId,
+            approvalMode: newMode,
+          });
+        } catch (err) {
+          console.error("Erro ao atualizar approval mode:", err);
+        }
+      }
+    },
+    [activeThreadId]
+  );
+
   const handleSend = useCallback(
     async (content: string) => {
       if (!activeThreadId || apiKeyConfigured === false) return;
@@ -176,6 +198,7 @@ export function ChatArea() {
           provider,
           model,
           effort,
+          approvalMode,
         });
       } catch (err) {
         console.error("Erro ao sincronizar thread:", err);
@@ -183,31 +206,42 @@ export function ChatArea() {
 
       sendMessage(content);
     },
-    [activeThreadId, model, provider, effort, sendMessage, apiKeyConfigured]
+    [activeThreadId, model, provider, effort, approvalMode, sendMessage, apiKeyConfigured]
   );
 
   // Empty state
   if (!activeThreadId) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-white/5">
-            <Sparkles className="size-8 text-muted-foreground/50" />
+      <div className="flex flex-1 flex-col bg-background">
+        {!sidebarOpen && (
+          <div className="px-4 pt-3">
+            <HeaderButton
+              icon={<PanelLeft className="size-4" />}
+              tooltip="Mostrar sidebar"
+              onClick={() => setSidebarOpen(true)}
+            />
           </div>
-          <div>
-            <h2 className="text-xl font-medium text-foreground">
-              {activeProject ? "Vamos construir" : "Duck Codex"}
-            </h2>
-            {activeProject && (
-              <p className="mt-1 text-sm text-muted-foreground">
-                {activeProject.name}
-              </p>
-            )}
-            {!activeProject && (
-              <p className="mt-1 text-sm text-muted-foreground">
-                Selecione ou crie uma conversa para comecar.
-              </p>
-            )}
+        )}
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex size-16 items-center justify-center rounded-2xl bg-white/5">
+              <Sparkles className="size-8 text-muted-foreground/50" />
+            </div>
+            <div>
+              <h2 className="text-xl font-medium text-foreground">
+                {activeProject ? "Vamos construir" : "Duck Codex"}
+              </h2>
+              {activeProject && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {activeProject.name}
+                </p>
+              )}
+              {!activeProject && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Selecione ou crie uma conversa para comecar.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -219,6 +253,13 @@ export function ChatArea() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/30 px-6 py-2.5">
         <div className="flex items-center gap-2 min-w-0">
+          {!sidebarOpen && (
+            <HeaderButton
+              icon={<PanelLeft className="size-4" />}
+              tooltip="Mostrar sidebar"
+              onClick={() => setSidebarOpen(true)}
+            />
+          )}
           <h1 className="truncate text-sm font-medium text-foreground">
             {activeThread?.title || "Conversa"}
           </h1>
@@ -228,6 +269,32 @@ export function ChatArea() {
             </span>
           )}
         </div>
+
+        {activeProject && (
+          <div className="flex items-center gap-1">
+            <HeaderButton
+              icon={<FolderOpen className="size-4" />}
+              tooltip="Arquivos do projeto"
+              onClick={() => {
+                useAppStore.getState().setFilePanelOpen(!useAppStore.getState().filePanelOpen);
+              }}
+            />
+            <HeaderButton
+              icon={<Terminal className="size-4" />}
+              tooltip="Terminal"
+              onClick={() => {
+                electronAPI.invoke("shell:open-terminal", { path: activeProject.path });
+              }}
+            />
+            <HeaderButton
+              icon={<Globe className="size-4" />}
+              tooltip="Preview no browser"
+              onClick={() => {
+                electronAPI.invoke("shell:open-url", { url: "http://localhost:3000" });
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Messages */}
@@ -263,8 +330,9 @@ export function ChatArea() {
             <StreamingBubble
               content={streamingContent}
               elapsedSeconds={streamElapsedSeconds}
-              provider={activeThread?.provider as ProviderId | undefined}
-              model={activeThread?.model}
+              provider={provider}
+              model={model}
+              activities={streamingActivities}
             />
           )}
 
@@ -322,7 +390,30 @@ export function ChatArea() {
         onProviderChange={handleProviderChange}
         onModelChange={handleModelChange}
         onEffortChange={handleEffortChange}
+        approvalMode={approvalMode}
+        onApprovalModeChange={handleApprovalModeChange}
       />
     </div>
+  );
+}
+
+function HeaderButton({
+  icon,
+  tooltip,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  tooltip: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={tooltip}
+      onClick={onClick}
+      className="flex size-7 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
+    >
+      {icon}
+    </button>
   );
 }

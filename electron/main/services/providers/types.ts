@@ -1,4 +1,4 @@
-export type ApiProviderId = "claude" | "openai" | "codex";
+export type ApiProviderId = "claude" | "openai" | "codex" | "claude-code";
 
 export interface ProviderModel {
   label: string;
@@ -28,12 +28,16 @@ export interface ProviderHistoryMessage {
   content: string;
 }
 
+export type ApprovalMode = "suggest" | "auto-edit" | "full-auto";
+
 export interface SendMessageRequest {
   model: string;
   effort: string;
+  approvalMode: ApprovalMode;
   sessionId: string | null;
   message: string;
   history: ProviderHistoryMessage[];
+  projectPath?: string;
 }
 
 export interface SendMessageResult {
@@ -44,9 +48,14 @@ export interface SendMessageResult {
 }
 
 export interface StreamChunk {
-  type: "delta" | "done" | "error";
+  type: "delta" | "done" | "error" | "activity";
   text?: string;
   error?: string;
+  activity?: {
+    kind: "tool_call" | "tool_result" | "info";
+    tool?: string;
+    summary: string;
+  };
 }
 
 export interface ProviderRuntime {

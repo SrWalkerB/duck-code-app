@@ -24,6 +24,9 @@ interface AppState {
   activeRunId: string | null;
   streamingContent: string;
   streamingError: string | null;
+  streamingActivities: { kind: string; tool?: string; summary: string }[];
+  filePanelOpen: boolean;
+  sidebarOpen: boolean;
 
   fetchProjects: () => Promise<void>;
   fetchProviderCatalog: () => Promise<void>;
@@ -39,6 +42,9 @@ interface AppState {
   setStreamingError: (error: string | null) => void;
   clearStream: () => void;
   addOptimisticMessage: (message: Message) => void;
+  addStreamActivity: (activity: { kind: string; tool?: string; summary: string }) => void;
+  setFilePanelOpen: (open: boolean) => void;
+  setSidebarOpen: (open: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -55,6 +61,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeRunId: null,
   streamingContent: "",
   streamingError: null,
+  streamingActivities: [],
+  filePanelOpen: false,
+  sidebarOpen: true,
 
   fetchProjects: async () => {
     try {
@@ -146,7 +155,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       streamingThreadId: null,
       streamingContent: "",
       streamingError: null,
+      streamingActivities: [],
     });
+  },
+
+  addStreamActivity: (activity) => {
+    set((state) => ({
+      streamingActivities: [...state.streamingActivities, activity],
+    }));
   },
 
   addOptimisticMessage: (message) => {
@@ -160,4 +176,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       },
     }));
   },
+
+  setFilePanelOpen: (open) => set({ filePanelOpen: open }),
+  setSidebarOpen: (open) => set({ sidebarOpen: open }),
 }));

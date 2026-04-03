@@ -8,12 +8,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { ProviderId } from "@/lib/types";
+import type { ApprovalMode, ProviderId } from "@/lib/types";
 
 const EFFORTS = [
   { label: "Low", value: "low" },
   { label: "Medium", value: "medium" },
   { label: "High", value: "high" },
+];
+
+const APPROVAL_MODES = [
+  { label: "Suggest", value: "suggest" },
+  { label: "Auto-edit", value: "auto-edit" },
+  { label: "Full auto", value: "full-auto" },
 ];
 
 interface ChatInputProps {
@@ -30,6 +36,8 @@ interface ChatInputProps {
   onProviderChange: (provider: ProviderId) => void;
   onModelChange: (model: string) => void;
   onEffortChange: (effort: string) => void;
+  approvalMode: ApprovalMode;
+  onApprovalModeChange: (mode: ApprovalMode) => void;
 }
 
 export function ChatInput({
@@ -46,6 +54,8 @@ export function ChatInput({
   onProviderChange,
   onModelChange,
   onEffortChange,
+  approvalMode,
+  onApprovalModeChange,
 }: ChatInputProps) {
   const [value, setValue] = useState("");
   const [images, setImages] = useState<{ file: File; preview: string }[]>([]);
@@ -118,6 +128,7 @@ export function ChatInput({
     models.find((m) => m.value === model) ||
     models[0] || { label: model || "Modelo", value: model };
   const selectedEffort = EFFORTS.find((e) => e.value === effort) || EFFORTS[1];
+  const selectedApproval = APPROVAL_MODES.find((a) => a.value === approvalMode) || APPROVAL_MODES[0];
 
   return (
     <div className="border-t border-border/30 bg-background p-4">
@@ -193,6 +204,13 @@ export function ChatInput({
                   onChange={onEffortChange}
                 />
               )}
+
+              <InlineDropdown
+                label={selectedApproval.label}
+                items={APPROVAL_MODES}
+                value={approvalMode}
+                onChange={(v) => onApprovalModeChange(v as ApprovalMode)}
+              />
             </div>
 
             {/* Send / Stop */}

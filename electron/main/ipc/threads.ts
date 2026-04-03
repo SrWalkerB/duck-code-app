@@ -22,6 +22,7 @@ export function registerThreadHandlers(): void {
         provider?: string;
         model?: string;
         effort?: string;
+        approvalMode?: string;
       }
     ) => {
       return prisma.thread.create({
@@ -31,6 +32,7 @@ export function registerThreadHandlers(): void {
           provider: args.provider ?? "openai",
           model: args.model ?? "gpt-5.1-codex-mini",
           effort: args.effort ?? "medium",
+          approvalMode: args.approvalMode ?? "suggest",
         },
       });
     }
@@ -46,6 +48,7 @@ export function registerThreadHandlers(): void {
         provider?: string;
         model?: string;
         effort?: string;
+        approvalMode?: string;
         sessionId?: string | null;
       }
     ) => {
@@ -56,6 +59,7 @@ export function registerThreadHandlers(): void {
           ...(args.provider !== undefined && { provider: args.provider }),
           ...(args.model !== undefined && { model: args.model }),
           ...(args.effort !== undefined && { effort: args.effort }),
+          ...(args.approvalMode !== undefined && { approvalMode: args.approvalMode }),
           ...(args.sessionId !== undefined && { sessionId: args.sessionId }),
         },
       });

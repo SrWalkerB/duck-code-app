@@ -43,6 +43,15 @@ export async function ensureDatabase(): Promise<void> {
     )
   `);
 
+  // Add approval_mode column if missing (migration for existing DBs)
+  try {
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE threads ADD COLUMN approval_mode TEXT NOT NULL DEFAULT 'suggest'`
+    );
+  } catch {
+    // Column already exists
+  }
+
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,

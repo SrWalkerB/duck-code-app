@@ -8,7 +8,7 @@ export interface SharedProviderModel {
 }
 
 export interface SharedProviderCatalogEntry {
-  id: "claude" | "openai" | "codex";
+  id: "claude" | "openai" | "codex" | "claude-code";
   label: string;
   default_model: string;
   models: SharedProviderModel[];
@@ -63,6 +63,20 @@ export const PROVIDER_CATALOG: SharedProviderCatalogEntry[] = [
       { label: "GPT-5.2", value: "gpt-5.2" },
       { label: "GPT-5.1 Codex Max", value: "gpt-5.1-codex-max" },
       { label: "GPT-5.1 Mini", value: "gpt-5.1-mini" },
+    ],
+    capabilities: {
+      supports_effort: false,
+      requires_api_key: false,
+    },
+  },
+  {
+    id: "claude-code",
+    label: "Claude Code CLI",
+    default_model: "claude-sonnet-4-6",
+    models: [
+      { label: "Opus 4.6", value: "claude-opus-4-6" },
+      { label: "Sonnet 4.6", value: "claude-sonnet-4-6" },
+      { label: "Haiku 4.5", value: "claude-haiku-4-5-20251001" },
     ],
     capabilities: {
       supports_effort: false,

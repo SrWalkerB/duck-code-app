@@ -5,6 +5,7 @@ import type {
   ChatStreamPayload,
   ChatCompletePayload,
   ChatErrorPayload,
+  ChatActivityPayload,
   ChatDonePayload,
 } from "@/lib/types";
 
@@ -23,6 +24,7 @@ export function useChat() {
     fetchMessages,
     addOptimisticMessage,
     addStreamContent,
+    addStreamActivity,
   } = useAppStore();
 
   useEffect(() => {
@@ -36,6 +38,15 @@ export function useChat() {
         if (payload.runId !== useAppStore.getState().activeRunId) return;
         console.log("[chat:stream] delta:", payload.text.slice(0, 50));
         addStreamContent(payload.text);
+      }
+    );
+
+    const unsubActivity = electronAPI.on(
+      `chat:activity:${listenerThreadId}`,
+      (...args: unknown[]) => {
+        const payload = args[0] as ChatActivityPayload;
+        if (payload.runId !== useAppStore.getState().activeRunId) return;
+        addStreamActivity(payload.activity);
       }
     );
 
@@ -81,6 +92,7 @@ export function useChat() {
 
     return () => {
       unsubStream();
+      unsubActivity();
       unsubComplete();
       unsubError();
       unsubDone();
@@ -94,6 +106,7 @@ export function useChat() {
     fetchMessages,
     clearStream,
     addStreamContent,
+    addStreamActivity,
   ]);
 
   const sendMessage = useCallback(

@@ -4,6 +4,8 @@ import { registerThreadHandlers } from "./threads.js";
 import { registerMessageHandlers } from "./messages.js";
 import { registerDialogHandlers } from "./dialog.js";
 import { registerProviderHandlers } from "./providers.js";
+import { registerShellHandlers } from "./shell.js";
+import { registerFileHandlers } from "./files.js";
 
 export function registerAllHandlers(mainWindow: BrowserWindow): void {
   registerProjectHandlers();
@@ -11,4 +13,6 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   registerMessageHandlers(mainWindow);
   registerDialogHandlers();
   registerProviderHandlers();
+  registerShellHandlers();
+  registerFileHandlers(mainWindow);
 }
