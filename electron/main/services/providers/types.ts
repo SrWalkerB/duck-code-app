@@ -1,4 +1,9 @@
-export type ApiProviderId = "claude" | "openai" | "codex" | "claude-code";
+export type ApiProviderId =
+  | "claude"
+  | "openai"
+  | "codex"
+  | "claude-code"
+  | "lm-studio";
 
 export interface ProviderModel {
   label: string;
@@ -52,13 +57,15 @@ export interface StreamChunk {
   text?: string;
   error?: string;
   activity?: {
-    kind: "tool_call" | "tool_result" | "info";
+    kind: "tool_call" | "tool_result" | "info" | "thinking";
     tool?: string;
     summary: string;
   };
 }
 
 export interface ProviderRuntime {
+  /** Whether this provider handles tool use internally (CLI providers). */
+  readonly supportsNativeTools: boolean;
   getCatalogEntry(): ProviderCatalogEntry;
   getApiKeyStatus(): Promise<ApiKeyStatus>;
   setApiKey(apiKey: string): Promise<void>;

@@ -7,6 +7,32 @@ import type {
   ProviderCatalogEntry,
 } from "@/lib/types";
 import { FALLBACK_PROVIDER_CATALOG } from "@/lib/providers";
+import type { ApprovalMode, ProviderId } from "@/lib/types";
+
+export interface ToolApprovalRequest {
+  runId: string;
+  tool: string;
+  args: Record<string, unknown>;
+  description: string;
+}
+
+export interface QueuedMessage {
+  content: string;
+  threadId: string;
+  provider: ProviderId;
+  model: string;
+  effort: string;
+  approvalMode: ApprovalMode;
+}
+
+export interface ThreadStreamState {
+  runId: string;
+  content: string;
+  error: string | null;
+  activities: { kind: string; tool?: string; summary: string }[];
+  startedAt: number;
+  pendingToolApproval: ToolApprovalRequest | null;
+}
 
 interface AppState {
   projects: Project[];
@@ -18,15 +44,13 @@ interface AppState {
   activeThreadId: string | null;
   activeView: "chat" | "settings";
 
-  isStreaming: boolean;
-  streamingStartedAt: number | null;
-  streamingThreadId: string | null;
-  activeRunId: string | null;
-  streamingContent: string;
-  streamingError: string | null;
-  streamingActivities: { kind: string; tool?: string; summary: string }[];
+  /** Per-thread streaming state — multiple threads can stream in parallel */
+  activeStreams: Record<string, ThreadStreamState>;
   filePanelOpen: boolean;
   sidebarOpen: boolean;
+  terminalPanelOpen: boolean;
+  terminalProjectPath: string | null;
+  messageQueue: QueuedMessage[];
 
   fetchProjects: () => Promise<void>;
   fetchProviderCatalog: () => Promise<void>;
@@ -35,16 +59,25 @@ interface AppState {
   setActiveProject: (projectId: string | null) => void;
   setActiveThread: (threadId: string | null) => void;
   setActiveView: (view: "chat" | "settings") => void;
-  addStreamContent: (text: string) => void;
-  setStreamingThreadId: (threadId: string | null) => void;
-  setActiveRunId: (runId: string | null) => void;
-  setIsStreaming: (streaming: boolean) => void;
-  setStreamingError: (error: string | null) => void;
-  clearStream: () => void;
+
+  // Per-thread streaming actions
+  startStream: (threadId: string, runId: string) => void;
+  addStreamContent: (threadId: string, text: string) => void;
+  addStreamActivity: (threadId: string, activity: { kind: string; tool?: string; summary: string }) => void;
+  setStreamError: (threadId: string, error: string) => void;
+  endStream: (threadId: string) => void;
+  setThreadToolApproval: (threadId: string, approval: ToolApprovalRequest | null) => void;
+  respondToolApproval: (threadId: string, approved: boolean) => Promise<void>;
+
   addOptimisticMessage: (message: Message) => void;
-  addStreamActivity: (activity: { kind: string; tool?: string; summary: string }) => void;
   setFilePanelOpen: (open: boolean) => void;
   setSidebarOpen: (open: boolean) => void;
+  openTerminalPanel: (projectPath: string) => void;
+  setTerminalPanelOpen: (open: boolean) => void;
+  enqueueMessage: (message: QueuedMessage) => void;
+  dequeueMessage: () => QueuedMessage | undefined;
+  removeQueuedMessage: (index: number) => void;
+  clearQueue: () => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -55,15 +88,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeProjectId: null,
   activeThreadId: null,
   activeView: "chat",
-  isStreaming: false,
-  streamingStartedAt: null,
-  streamingThreadId: null,
-  activeRunId: null,
-  streamingContent: "",
-  streamingError: null,
-  streamingActivities: [],
+  activeStreams: {},
   filePanelOpen: false,
   sidebarOpen: true,
+  terminalPanelOpen: false,
+  terminalProjectPath: null,
+  messageQueue: [],
 
   fetchProjects: async () => {
     try {
@@ -121,6 +151,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setActiveThread: (threadId) => {
+    get().clearQueue();
     set({ activeThreadId: threadId });
     if (threadId) {
       get().fetchMessages(threadId);
@@ -129,40 +160,90 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setActiveView: (view) => set({ activeView: view }),
 
-  addStreamContent: (text) => {
+  startStream: (threadId, runId) => {
     set((state) => ({
-      streamingContent: state.streamingContent + text,
+      activeStreams: {
+        ...state.activeStreams,
+        [threadId]: {
+          runId,
+          content: "",
+          error: null,
+          activities: [],
+          startedAt: Date.now(),
+          pendingToolApproval: null,
+        },
+      },
     }));
   },
 
-  setStreamingThreadId: (threadId) => set({ streamingThreadId: threadId }),
-  setActiveRunId: (runId) => set({ activeRunId: runId }),
-
-  setIsStreaming: (streaming) => {
-    set((state) => ({
-      isStreaming: streaming,
-      streamingStartedAt: streaming
-        ? state.streamingStartedAt ?? Date.now()
-        : null,
-    }));
-  },
-
-  setStreamingError: (error) => set({ streamingError: error }),
-
-  clearStream: () => {
-    set({
-      activeRunId: null,
-      streamingThreadId: null,
-      streamingContent: "",
-      streamingError: null,
-      streamingActivities: [],
+  addStreamContent: (threadId, text) => {
+    set((state) => {
+      const stream = state.activeStreams[threadId];
+      if (!stream) return state;
+      return {
+        activeStreams: {
+          ...state.activeStreams,
+          [threadId]: { ...stream, content: stream.content + text },
+        },
+      };
     });
   },
 
-  addStreamActivity: (activity) => {
-    set((state) => ({
-      streamingActivities: [...state.streamingActivities, activity],
-    }));
+  addStreamActivity: (threadId, activity) => {
+    set((state) => {
+      const stream = state.activeStreams[threadId];
+      if (!stream) return state;
+      return {
+        activeStreams: {
+          ...state.activeStreams,
+          [threadId]: { ...stream, activities: [...stream.activities, activity] },
+        },
+      };
+    });
+  },
+
+  setStreamError: (threadId, error) => {
+    set((state) => {
+      const stream = state.activeStreams[threadId];
+      if (!stream) return state;
+      return {
+        activeStreams: {
+          ...state.activeStreams,
+          [threadId]: { ...stream, error },
+        },
+      };
+    });
+  },
+
+  endStream: (threadId) => {
+    set((state) => {
+      const { [threadId]: _, ...rest } = state.activeStreams;
+      return { activeStreams: rest };
+    });
+  },
+
+  setThreadToolApproval: (threadId, approval) => {
+    set((state) => {
+      const stream = state.activeStreams[threadId];
+      if (!stream) return state;
+      return {
+        activeStreams: {
+          ...state.activeStreams,
+          [threadId]: { ...stream, pendingToolApproval: approval },
+        },
+      };
+    });
+  },
+
+  respondToolApproval: async (threadId, approved) => {
+    const stream = get().activeStreams[threadId];
+    if (!stream?.pendingToolApproval) return;
+    await electronAPI.invoke("message:tool-approval-response", {
+      threadId,
+      runId: stream.pendingToolApproval.runId,
+      approved,
+    });
+    get().setThreadToolApproval(threadId, null);
   },
 
   addOptimisticMessage: (message) => {
@@ -179,4 +260,28 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setFilePanelOpen: (open) => set({ filePanelOpen: open }),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+  openTerminalPanel: (projectPath) =>
+    set({ terminalPanelOpen: true, terminalProjectPath: projectPath }),
+  setTerminalPanelOpen: (open) =>
+    set((state) => ({
+      terminalPanelOpen: open,
+      terminalProjectPath: open ? state.terminalProjectPath : null,
+    })),
+
+  enqueueMessage: (message) => {
+    set({ messageQueue: [message] });
+  },
+  dequeueMessage: () => {
+    const queue = get().messageQueue;
+    if (queue.length === 0) return undefined;
+    const [first, ...rest] = queue;
+    set({ messageQueue: rest });
+    return first;
+  },
+  removeQueuedMessage: (index) => {
+    set((state) => ({
+      messageQueue: state.messageQueue.filter((_, i) => i !== index),
+    }));
+  },
+  clearQueue: () => set({ messageQueue: [] }),
 }));

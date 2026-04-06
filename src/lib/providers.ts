@@ -28,5 +28,6 @@ export function buildDefaultModelsMap(
     openai: getProviderDefaultModel(catalog, "openai"),
     codex: getProviderDefaultModel(catalog, "codex"),
     "claude-code": getProviderDefaultModel(catalog, "claude-code"),
+    "lm-studio": getProviderDefaultModel(catalog, "lm-studio"),
   };
 }

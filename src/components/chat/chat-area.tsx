@@ -1,13 +1,35 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { electronAPI } from "@/lib/electron-api";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAppStore } from "@/stores/app-store";
 import { useChat } from "@/hooks/use-chat";
 import { MessageBubble, StreamingBubble } from "./message-bubble";
 import { ChatInput } from "./chat-input";
+import { MessageQueue } from "./message-queue";
+import { ToolApprovalCard } from "./tool-approval-card";
+import { ThreadLogsPanel } from "./thread-logs-panel";
 import type { ApprovalMode, ProviderId, Thread } from "@/lib/types";
-import { Sparkles, KeyRound, FolderOpen, Globe, Terminal, PanelRight, PanelLeft } from "lucide-react";
+import { useSettingsStore } from "@/stores/settings-store";
+import type { CodeEditorId } from "@/stores/settings-store";
+import {
+  Sparkles,
+  KeyRound,
+  FolderOpen,
+  Globe,
+  Terminal,
+  PanelLeft,
+  GitBranch,
+  ChevronDown,
+  ScrollText,
+} from "lucide-react";
 import { getProviderEntry } from "@/lib/providers";
+import { cn } from "@/lib/utils";
 
 export function ChatArea() {
   const {
@@ -16,18 +38,20 @@ export function ChatArea() {
     messages,
     activeProjectId,
     activeThreadId,
-    streamingStartedAt,
-    streamingThreadId,
+    activeStreams,
     providerCatalog,
     sidebarOpen,
     setSidebarOpen,
-    streamingActivities,
+    terminalPanelOpen,
+    terminalProjectPath,
+    messageQueue,
+    enqueueMessage,
+    removeQueuedMessage,
   } = useAppStore();
 
   const {
     sendMessage,
     stopGeneration,
-    isStreaming,
     streamingContent,
     streamingError,
   } = useChat();
@@ -38,16 +62,30 @@ export function ChatArea() {
   const [approvalMode, setApprovalMode] = useState<ApprovalMode>("suggest");
   const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null);
   const [streamClock, setStreamClock] = useState(() => Date.now());
-  const isStreamingThisThread = isStreaming && streamingThreadId === activeThreadId;
+  const [logsPanelOpen, setLogsPanelOpen] = useState(false);
+  const [gitSwitching, setGitSwitching] = useState(false);
+  const [gitCurrentBranch, setGitCurrentBranch] = useState<string | null>(null);
+  const [gitBranches, setGitBranches] = useState<string[]>([]);
+  const [gitIsRepo, setGitIsRepo] = useState(false);
+  const [installedEditors, setInstalledEditors] = useState<
+    Array<{ id: CodeEditorId; label: string }>
+  >([]);
+  const threadStream = activeThreadId ? activeStreams[activeThreadId] ?? null : null;
+  const isStreamingThisThread = threadStream !== null;
+  const streamingActivities = threadStream?.activities ?? [];
   const streamElapsedSeconds =
-    isStreamingThisThread && streamingStartedAt
-      ? Math.floor((streamClock - streamingStartedAt) / 1000)
+    isStreamingThisThread && threadStream
+      ? Math.floor((streamClock - threadStream.startedAt) / 1000)
       : 0;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
+  const isTerminalActive =
+    !!activeProject &&
+    terminalPanelOpen &&
+    terminalProjectPath === activeProject.path;
   const activeThreads = activeProjectId ? threads[activeProjectId] || [] : [];
   const activeThread = activeThreads.find((t: Thread) => t.id === activeThreadId);
   const activeMessages = activeThreadId ? messages[activeThreadId] || [] : [];
@@ -57,6 +95,29 @@ export function ChatArea() {
     value: item.id,
   }));
   const modelOptions = providerInfo.models;
+  const preferredCodeEditor = useSettingsStore((s) => s.preferredCodeEditor);
+  const setPreferredCodeEditor = useSettingsStore((s) => s.setPreferredCodeEditor);
+  const hasInstalledEditor = installedEditors.length > 0;
+
+  useEffect(() => {
+    electronAPI
+      .invoke("shell:list-installed-editors")
+      .then((result) => {
+        const list = Array.isArray(result)
+          ? (result as Array<{ id: CodeEditorId; label: string }>)
+          : [];
+        setInstalledEditors(list);
+      })
+      .catch(() => setInstalledEditors([]));
+  }, []);
+
+  useEffect(() => {
+    if (!installedEditors.length) return;
+    const exists = installedEditors.some((item) => item.id === preferredCodeEditor);
+    if (!exists) {
+      setPreferredCodeEditor(installedEditors[0].id);
+    }
+  }, [installedEditors, preferredCodeEditor, setPreferredCodeEditor]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
     const viewport = scrollAreaRef.current?.querySelector(
@@ -85,10 +146,10 @@ export function ChatArea() {
   }, [activeMessages.length, streamingContent, scrollToBottom]);
 
   useEffect(() => {
-    if (!isStreamingThisThread || !streamingStartedAt) return;
+    if (!isStreamingThisThread) return;
     const timer = window.setInterval(() => setStreamClock(Date.now()), 1000);
     return () => window.clearInterval(timer);
-  }, [isStreamingThisThread, streamingStartedAt]);
+  }, [isStreamingThisThread]);
 
   // Sync provider/model/effort from active thread
   useEffect(() => {
@@ -126,6 +187,7 @@ export function ChatArea() {
             provider: newProvider,
             model: nextModel,
             effort,
+            sessionId: null,
           });
         } catch (err) {
           console.error("Erro ao atualizar provider:", err);
@@ -143,6 +205,7 @@ export function ChatArea() {
           await electronAPI.invoke("thread:update", {
             id: activeThreadId,
             model: newModel,
+            sessionId: null,
           });
         } catch (err) {
           console.error("Erro ao atualizar modelo:", err);
@@ -209,6 +272,118 @@ export function ChatArea() {
     [activeThreadId, model, provider, effort, approvalMode, sendMessage, apiKeyConfigured]
   );
 
+  const handleEnqueue = useCallback(
+    (content: string) => {
+      if (!activeThreadId) return;
+      enqueueMessage({
+        content,
+        threadId: activeThreadId,
+        provider,
+        model,
+        effort,
+        approvalMode,
+      });
+    },
+    [activeThreadId, enqueueMessage, provider, model, effort, approvalMode]
+  );
+
+  const handleSteer = useCallback(
+    async (index: number) => {
+      const msg = messageQueue[index];
+      if (!msg) return;
+      removeQueuedMessage(index);
+      await stopGeneration();
+      setTimeout(() => handleSend(msg.content), 100);
+    },
+    [messageQueue, removeQueuedMessage, stopGeneration, handleSend]
+  );
+
+  const handleRemoveQueued = useCallback(
+    (index: number) => {
+      removeQueuedMessage(index);
+    },
+    [removeQueuedMessage]
+  );
+
+  const refreshGitSummary = useCallback(async () => {
+    if (!activeThreadId) {
+      setGitIsRepo(false);
+      setGitCurrentBranch(null);
+      setGitBranches([]);
+      return;
+    }
+
+    try {
+      const summary = (await electronAPI.invoke("git:summary-for-thread", {
+        threadId: activeThreadId,
+      })) as {
+        isRepo: boolean;
+        currentBranch: string | null;
+        branches: string[];
+      };
+      setGitIsRepo(Boolean(summary.isRepo));
+      setGitCurrentBranch(summary.currentBranch);
+      setGitBranches(Array.isArray(summary.branches) ? summary.branches : []);
+    } catch (err) {
+      console.error("Erro ao buscar dados de git da thread:", err);
+      setGitIsRepo(false);
+      setGitCurrentBranch(null);
+      setGitBranches([]);
+    }
+  }, [activeThreadId]);
+
+  useEffect(() => {
+    refreshGitSummary();
+  }, [refreshGitSummary]);
+
+  const handleCheckoutBranch = useCallback(
+    async (branch: string) => {
+      if (!activeThreadId || gitSwitching) return;
+      try {
+        setGitSwitching(true);
+        await electronAPI.invoke("git:checkout-branch-for-thread", {
+          threadId: activeThreadId,
+          branch,
+        });
+        await refreshGitSummary();
+      } catch (err) {
+        console.error("Erro ao trocar branch da thread:", err);
+      } finally {
+        setGitSwitching(false);
+      }
+    },
+    [activeThreadId, gitSwitching, refreshGitSummary]
+  );
+
+  const handleOpenThreadInEditor = useCallback(
+    async (editorOverride?: CodeEditorId) => {
+      if (!activeProject || !activeThreadId || !hasInstalledEditor) return;
+      const targetEditor = editorOverride ?? preferredCodeEditor;
+      try {
+        const summary = (await electronAPI.invoke("git:summary-for-thread", {
+          threadId: activeThreadId,
+        })) as { resolvedPath?: string | null };
+        const resolvedPath = summary?.resolvedPath || activeProject.path;
+        await electronAPI.invoke("shell:open-in-editor", {
+          path: resolvedPath,
+          editor: targetEditor,
+        });
+      } catch (err) {
+        console.error("Erro ao abrir diretorio da thread no editor:", err);
+      }
+    },
+    [activeProject, activeThreadId, preferredCodeEditor, hasInstalledEditor]
+  );
+
+  const handleEditorSelectChange = useCallback(
+    async (value: string) => {
+      const nextEditor = value as CodeEditorId;
+      setPreferredCodeEditor(nextEditor);
+      await handleOpenThreadInEditor(nextEditor);
+    },
+    [setPreferredCodeEditor, handleOpenThreadInEditor]
+  );
+
   // Empty state
   if (!activeThreadId) {
     return (
@@ -229,7 +404,7 @@ export function ChatArea() {
             </div>
             <div>
               <h2 className="text-xl font-medium text-foreground">
-                {activeProject ? "Vamos construir" : "Duck Codex"}
+                {activeProject ? "Vamos construir" : "Duck Code"}
               </h2>
               {activeProject && (
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -249,6 +424,7 @@ export function ChatArea() {
   }
 
   return (
+    <div className="flex flex-1 min-h-0">
     <div className="flex flex-1 flex-col bg-background min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/30 px-6 py-2.5">
@@ -271,19 +447,40 @@ export function ChatArea() {
         </div>
 
         {activeProject && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            {hasInstalledEditor && (
+              <>
+                <label className="sr-only" htmlFor="code-editor-select">
+                  Editor de codigo
+                </label>
+                <select
+                  id="code-editor-select"
+                  value={preferredCodeEditor}
+                  onChange={(e) => handleEditorSelectChange(e.target.value)}
+                  className="h-7 rounded-md border border-border/50 bg-muted/50 px-2 text-xs text-foreground outline-none transition-colors hover:border-border focus:border-border"
+                  title="Selecionar editor de codigo"
+                >
+                  {installedEditors.map((editor) => (
+                    <option key={editor.id} value={editor.id}>
+                      {editor.label}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+            <div className="h-4 w-px bg-border/60" />
             <HeaderButton
               icon={<FolderOpen className="size-4" />}
-              tooltip="Arquivos do projeto"
-              onClick={() => {
-                useAppStore.getState().setFilePanelOpen(!useAppStore.getState().filePanelOpen);
-              }}
+              tooltip="Abrir diretorio da thread no editor"
+              disabled={!hasInstalledEditor}
+              onClick={handleOpenThreadInEditor}
             />
             <HeaderButton
               icon={<Terminal className="size-4" />}
               tooltip="Terminal"
+              active={isTerminalActive}
               onClick={() => {
-                electronAPI.invoke("shell:open-terminal", { path: activeProject.path });
+                useAppStore.getState().openTerminalPanel(activeProject.path);
               }}
             />
             <HeaderButton
@@ -293,6 +490,18 @@ export function ChatArea() {
                 electronAPI.invoke("shell:open-url", { url: "http://localhost:3000" });
               }}
             />
+            <HeaderButton
+              icon={<ScrollText className="size-4" />}
+              tooltip="Logs da thread"
+              active={logsPanelOpen}
+              onClick={() => {
+                const { filePanelOpen, setFilePanelOpen } = useAppStore.getState();
+                if (!logsPanelOpen && filePanelOpen) {
+                  setFilePanelOpen(false);
+                }
+                setLogsPanelOpen(!logsPanelOpen);
+              }}
+            />
           </div>
         )}
       </div>
@@ -300,7 +509,7 @@ export function ChatArea() {
       {/* Messages */}
       <ScrollArea ref={scrollAreaRef} className="flex-1 min-h-0">
         <div className="mx-auto max-w-3xl px-6 py-6">
-          {activeMessages.length === 0 && !isStreaming && (
+          {activeMessages.length === 0 && !isStreamingThisThread && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Sparkles className="size-10 text-muted-foreground/30 mb-3" />
               <p className="text-sm text-muted-foreground/50">
@@ -359,6 +568,7 @@ export function ChatArea() {
             </div>
           )}
 
+          <ToolApprovalCard />
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
@@ -375,11 +585,19 @@ export function ChatArea() {
         </div>
       )}
 
+      {/* Message Queue */}
+      <MessageQueue
+        queue={messageQueue}
+        onSteer={handleSteer}
+        onRemove={handleRemoveQueued}
+      />
+
       {/* Input */}
       <ChatInput
         onSend={handleSend}
+        onEnqueue={handleEnqueue}
         onStop={stopGeneration}
-        isStreaming={isStreaming}
+        isStreaming={isStreamingThisThread}
         disabled={!activeThreadId || apiKeyConfigured === false}
         provider={provider}
         providers={providerOptions}
@@ -393,6 +611,56 @@ export function ChatArea() {
         approvalMode={approvalMode}
         onApprovalModeChange={handleApprovalModeChange}
       />
+
+      {activeThreadId && gitIsRepo && (
+        <div className="border-t border-border/30 bg-background px-6 py-2">
+          <div className="mx-auto flex max-w-3xl items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex min-w-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] text-muted-foreground/80 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                  disabled={gitSwitching}
+                  title="Selecionar branch"
+                >
+                  <GitBranch className="size-3 shrink-0" />
+                  <span className="truncate">{gitCurrentBranch || "sem branch"}</span>
+                  <ChevronDown className="size-2.5 shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {gitBranches.length === 0 ? (
+                  <DropdownMenuItem disabled>Sem branches locais</DropdownMenuItem>
+                ) : (
+                  gitBranches.map((branch) => (
+                    <DropdownMenuItem
+                      key={branch}
+                      onClick={() => handleCheckoutBranch(branch)}
+                      className={cn(
+                        "flex items-center justify-between",
+                        gitCurrentBranch === branch && "text-foreground"
+                      )}
+                    >
+                      <span className="truncate">{branch}</span>
+                      {gitCurrentBranch === branch && (
+                        <span className="text-xs text-muted-foreground">atual</span>
+                      )}
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      )}
+    </div>
+
+    {logsPanelOpen && activeThreadId && (
+      <ThreadLogsPanel
+        threadId={activeThreadId}
+        onClose={() => setLogsPanelOpen(false)}
+      />
+    )}
     </div>
   );
 }
@@ -400,10 +668,14 @@ export function ChatArea() {
 function HeaderButton({
   icon,
   tooltip,
+  active = false,
+  disabled = false,
   onClick,
 }: {
   icon: React.ReactNode;
   tooltip: string;
+  active?: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -411,7 +683,12 @@ function HeaderButton({
       type="button"
       title={tooltip}
       onClick={onClick}
-      className="flex size-7 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
+      disabled={disabled}
+      className={`flex size-7 items-center justify-center rounded-md transition-colors ${
+        active
+          ? "bg-accent text-foreground ring-1 ring-border/60"
+          : "text-muted-foreground/60 hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+      }`}
     >
       {icon}
     </button>

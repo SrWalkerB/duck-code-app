@@ -63,4 +63,22 @@ export async function ensureDatabase(): Promise<void> {
       FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
     )
   `);
+
+  // Drop and recreate tool_logs to ensure correct column types
+  await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS tool_logs`);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE tool_logs (
+      id        TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      run_id    TEXT NOT NULL,
+      type      TEXT NOT NULL,
+      content   TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_tool_logs_thread_id ON tool_logs(thread_id)
+  `);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { electronAPI } from "@/lib/electron-api";
 import { useAppStore } from "@/stores/app-store";
 import type {
@@ -7,107 +7,174 @@ import type {
   ChatErrorPayload,
   ChatActivityPayload,
   ChatDonePayload,
+  ChatToolApprovalPayload,
 } from "@/lib/types";
 
-export function useChat() {
+/**
+ * Manages IPC listeners for ALL actively streaming threads,
+ * allowing parallel streaming across threads.
+ */
+function useStreamListeners() {
+  const activeStreams = useAppStore((s) => s.activeStreams);
   const {
-    activeThreadId,
-    isStreaming,
-    streamingThreadId,
-    streamingContent,
-    streamingError,
-    setStreamingThreadId,
-    setActiveRunId,
-    setIsStreaming,
-    setStreamingError,
-    clearStream,
-    fetchMessages,
-    addOptimisticMessage,
     addStreamContent,
     addStreamActivity,
+    setStreamError,
+    endStream,
+    fetchMessages,
+    setThreadToolApproval,
   } = useAppStore();
 
+  const sendMessageRef = useRef<((threadId: string, content: string) => Promise<void>) | null>(null);
+
+  // Track which thread IDs we have listeners for
+  const listenersRef = useRef<Map<string, () => void>>(new Map());
+
   useEffect(() => {
-    const listenerThreadId = streamingThreadId ?? activeThreadId;
-    if (!listenerThreadId) return;
+    const streamingThreadIds = new Set(Object.keys(activeStreams));
 
-    const unsubStream = electronAPI.on(
-      `chat:stream:${listenerThreadId}`,
-      (...args: unknown[]) => {
-        const payload = args[0] as ChatStreamPayload;
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        console.log("[chat:stream] delta:", payload.text.slice(0, 50));
-        addStreamContent(payload.text);
+    // Remove listeners for threads that stopped streaming
+    for (const [threadId, cleanup] of listenersRef.current) {
+      if (!streamingThreadIds.has(threadId)) {
+        cleanup();
+        listenersRef.current.delete(threadId);
       }
-    );
+    }
 
-    const unsubActivity = electronAPI.on(
-      `chat:activity:${listenerThreadId}`,
-      (...args: unknown[]) => {
-        const payload = args[0] as ChatActivityPayload;
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        addStreamActivity(payload.activity);
-      }
-    );
+    // Add listeners for newly streaming threads
+    for (const threadId of streamingThreadIds) {
+      if (listenersRef.current.has(threadId)) continue;
 
-    const unsubComplete = electronAPI.on(
-      `chat:complete:${listenerThreadId}`,
-      (...args: unknown[]) => {
-        const payload = args[0] as ChatCompletePayload;
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        console.log("[chat:complete]", payload.text.length, "chars,", payload.durationMs, "ms");
-        fetchMessages(listenerThreadId);
-      }
-    );
+      const unsubStream = electronAPI.on(
+        `chat:stream:${threadId}`,
+        (...args: unknown[]) => {
+          const payload = args[0] as ChatStreamPayload;
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          addStreamContent(threadId, payload.text);
+        }
+      );
 
-    const unsubError = electronAPI.on(
-      `chat:error:${listenerThreadId}`,
-      (...args: unknown[]) => {
-        const payload = args[0] as ChatErrorPayload;
-        console.error("[chat:error]", payload.message);
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        setStreamingError(payload.message);
-      }
-    );
+      const unsubActivity = electronAPI.on(
+        `chat:activity:${threadId}`,
+        (...args: unknown[]) => {
+          const payload = args[0] as ChatActivityPayload;
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          addStreamActivity(threadId, payload.activity);
+        }
+      );
 
-    const unsubDone = electronAPI.on(
-      `chat:done:${listenerThreadId}`,
-      (...args: unknown[]) => {
-        const payload = args[0] as ChatDonePayload;
-        console.log("[chat:done] runId:", payload.runId);
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        const hadError = useAppStore.getState().streamingError;
-        setIsStreaming(false);
-        if (!hadError) {
-          clearStream();
-        } else {
-          useAppStore.setState({
-            activeRunId: null,
-            streamingThreadId: null,
-            streamingContent: "",
+      const unsubComplete = electronAPI.on(
+        `chat:complete:${threadId}`,
+        (...args: unknown[]) => {
+          const payload = args[0] as ChatCompletePayload;
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          console.log("[chat:complete]", threadId, payload.text.length, "chars,", payload.durationMs, "ms");
+          fetchMessages(threadId);
+          endStream(threadId);
+        }
+      );
+
+      const unsubError = electronAPI.on(
+        `chat:error:${threadId}`,
+        (...args: unknown[]) => {
+          const payload = args[0] as ChatErrorPayload;
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          console.error("[chat:error]", threadId, payload.message);
+          setStreamError(threadId, payload.message);
+        }
+      );
+
+      const unsubToolApproval = electronAPI.on(
+        `chat:tool-approval:${threadId}`,
+        (...args: unknown[]) => {
+          const payload = args[0] as ChatToolApprovalPayload;
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          setThreadToolApproval(threadId, {
+            runId: payload.runId,
+            tool: payload.tool,
+            args: payload.args,
+            description: payload.description,
           });
         }
-      }
-    );
+      );
 
+      const unsubDone = electronAPI.on(
+        `chat:done:${threadId}`,
+        (...args: unknown[]) => {
+          const payload = args[0] as ChatDonePayload;
+          console.log("[chat:done] threadId:", threadId, "runId:", payload.runId);
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+
+          const hadError = currentStream.error;
+          if (!hadError) {
+            // Auto-send queued message for this thread
+            const next = useAppStore.getState().dequeueMessage();
+            if (next && next.threadId === threadId) {
+              setTimeout(async () => {
+                try {
+                  await electronAPI.invoke("thread:update", {
+                    id: next.threadId,
+                    provider: next.provider,
+                    model: next.model,
+                    effort: next.effort,
+                    approvalMode: next.approvalMode,
+                  });
+                } catch (err) {
+                  console.error("Erro ao sincronizar thread para mensagem enfileirada:", err);
+                }
+                sendMessageRef.current?.(next.threadId, next.content);
+              }, 50);
+            }
+          }
+
+          endStream(threadId);
+        }
+      );
+
+      const cleanup = () => {
+        unsubStream();
+        unsubActivity();
+        unsubComplete();
+        unsubError();
+        unsubToolApproval();
+        unsubDone();
+      };
+
+      listenersRef.current.set(threadId, cleanup);
+    }
+
+    const listeners = listenersRef.current;
+
+    // Cleanup all on unmount
     return () => {
-      unsubStream();
-      unsubActivity();
-      unsubComplete();
-      unsubError();
-      unsubDone();
+      for (const [, cleanup] of listeners) {
+        cleanup();
+      }
+      listeners.clear();
     };
-  }, [
-    activeThreadId,
-    streamingThreadId,
-    setActiveRunId,
-    setIsStreaming,
-    setStreamingError,
-    fetchMessages,
-    clearStream,
-    addStreamContent,
-    addStreamActivity,
-  ]);
+  }, [activeStreams, addStreamContent, addStreamActivity, setStreamError, endStream, fetchMessages, setThreadToolApproval]);
+
+  return sendMessageRef;
+}
+
+export function useChat() {
+  const activeThreadId = useAppStore((s) => s.activeThreadId);
+  const activeStreams = useAppStore((s) => s.activeStreams);
+  const { startStream, addOptimisticMessage, setStreamError, endStream } = useAppStore();
+
+  const sendMessageRef = useStreamListeners();
+
+  // Derive streaming state for the currently active thread
+  const threadStream = activeThreadId ? activeStreams[activeThreadId] ?? null : null;
+  const isStreaming = threadStream !== null;
+  const streamingContent = threadStream?.content ?? "";
+  const streamingError = threadStream?.error ?? null;
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -124,10 +191,7 @@ export function useChat() {
 
       const runId = crypto.randomUUID();
       console.log("[sendMessage] threadId:", activeThreadId, "runId:", runId);
-      clearStream();
-      setStreamingThreadId(activeThreadId);
-      setActiveRunId(runId);
-      setIsStreaming(true);
+      startStream(activeThreadId, runId);
 
       try {
         await electronAPI.invoke("message:send", {
@@ -137,22 +201,48 @@ export function useChat() {
         });
       } catch (err) {
         console.error("Erro ao enviar mensagem:", err);
-        setStreamingError(String(err));
-        setIsStreaming(false);
-        setStreamingThreadId(null);
-        setActiveRunId(null);
+        setStreamError(activeThreadId, String(err));
+        endStream(activeThreadId);
       }
     },
-    [
-      activeThreadId,
-      addOptimisticMessage,
-      clearStream,
-      setStreamingThreadId,
-      setActiveRunId,
-      setIsStreaming,
-      setStreamingError,
-    ]
+    [activeThreadId, addOptimisticMessage, startStream, setStreamError, endStream]
   );
+
+  // Thread-specific sendMessage for queued messages
+  const sendMessageForThread = useCallback(
+    async (threadId: string, content: string) => {
+      if (!threadId || !content.trim()) return;
+
+      addOptimisticMessage({
+        id: `temp-${Date.now()}`,
+        threadId,
+        role: "user",
+        content: content.trim(),
+        metadata: null,
+        createdAt: new Date().toISOString(),
+      });
+
+      const runId = crypto.randomUUID();
+      startStream(threadId, runId);
+
+      try {
+        await electronAPI.invoke("message:send", {
+          threadId,
+          content: content.trim(),
+          runId,
+        });
+      } catch (err) {
+        console.error("Erro ao enviar mensagem:", err);
+        setStreamError(threadId, String(err));
+        endStream(threadId);
+      }
+    },
+    [addOptimisticMessage, startStream, setStreamError, endStream]
+  );
+
+  useEffect(() => {
+    sendMessageRef.current = sendMessageForThread;
+  }, [sendMessageForThread, sendMessageRef]);
 
   const stopGeneration = useCallback(async () => {
     if (!activeThreadId) return;

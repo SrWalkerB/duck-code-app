@@ -28,6 +28,7 @@ const EFFORTS = [
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const providerCatalog = useAppStore((s) => s.providerCatalog);
+  const fetchProviderCatalog = useAppStore((s) => s.fetchProviderCatalog);
   const [providerApiKeys, setProviderApiKeys] = useState<
     Partial<Record<ProviderId, string>>
   >({});
@@ -43,6 +44,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [providerBusy, setProviderBusy] = useState<
     Partial<Record<ProviderId, boolean>>
   >({});
+  const [lmStudioBaseUrl, setLmStudioBaseUrl] = useState("");
+  const [lmStudioBusy, setLmStudioBusy] = useState(false);
+  const [lmStudioStatus, setLmStudioStatus] = useState<string | null>(null);
 
   const {
     theme,
@@ -60,8 +64,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     label: entry.label,
     value: entry.id as ProviderId,
   }));
-  const defaultModel =
-    defaultModels[defaultProvider] || providerInfo.default_model;
+  const configuredModel = defaultModels[defaultProvider] || providerInfo.default_model;
+  const hasConfiguredModel = providerInfo.models.some(
+    (item) => item.value === configuredModel
+  );
+  const defaultModel = hasConfiguredModel
+    ? configuredModel
+    : providerInfo.default_model;
   const apiKeyProviders = providerCatalog.filter(
     (entry) => entry.capabilities.requires_api_key
   );
@@ -86,6 +95,18 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       })
     );
   }, [apiKeyProviders, open]);
+
+  useEffect(() => {
+    if (!open || defaultProvider !== "lm-studio") return;
+
+    electronAPI
+      .invoke("provider:get-config", { provider: "lm-studio" })
+      .then((config) => {
+        const cfg = config as { baseUrl?: string };
+        setLmStudioBaseUrl(cfg.baseUrl || "http://127.0.0.1:1234");
+      })
+      .catch((err) => setLmStudioStatus(String(err)));
+  }, [defaultProvider, open]);
 
   const handleSaveProviderKey = async (provider: ProviderId) => {
     const apiKey = providerApiKeys[provider]?.trim() || "";
@@ -159,13 +180,47 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     }
   };
 
+  const handleSaveLmStudioConfig = async () => {
+    setLmStudioBusy(true);
+    setLmStudioStatus(null);
+    try {
+      const result = (await electronAPI.invoke("provider:set-config", {
+        provider: "lm-studio",
+        config: { baseUrl: lmStudioBaseUrl },
+      })) as { baseUrl?: string };
+      setLmStudioBaseUrl(result.baseUrl || lmStudioBaseUrl);
+      await fetchProviderCatalog();
+      setLmStudioStatus("Configuracao salva.");
+    } catch (err) {
+      setLmStudioStatus(String(err));
+    } finally {
+      setLmStudioBusy(false);
+    }
+  };
+
+  const handleTestLmStudioConnection = async () => {
+    setLmStudioBusy(true);
+    setLmStudioStatus(null);
+    try {
+      const message = (await electronAPI.invoke("provider:test-api-key", {
+        provider: "lm-studio",
+      })) as string;
+      await fetchProviderCatalog();
+      setLmStudioStatus(message);
+    } catch (err) {
+      setLmStudioStatus(String(err));
+    } finally {
+      setLmStudioBusy(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
-            Configure as preferencias do Duck Codex.
+            Configure as preferencias do Duck Code.
           </DialogDescription>
         </DialogHeader>
 
@@ -340,6 +395,49 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               </div>
             </div>
           )}
+
+          {defaultProvider === "lm-studio" && (
+            <>
+              <Separator />
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Servidor do LM Studio
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  URL local do servidor (ex: http://127.0.0.1:1234).
+                </p>
+
+                <input
+                  type="text"
+                  value={lmStudioBaseUrl}
+                  onChange={(event) => setLmStudioBaseUrl(event.target.value)}
+                  placeholder="http://127.0.0.1:1234"
+                  className="w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
+                />
+
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <OptionButton
+                    label={lmStudioBusy ? "Salvando..." : "Salvar URL"}
+                    active={false}
+                    onClick={handleSaveLmStudioConfig}
+                    disabled={lmStudioBusy}
+                  />
+                  <OptionButton
+                    label={lmStudioBusy ? "Testando..." : "Testar conexao"}
+                    active={false}
+                    onClick={handleTestLmStudioConnection}
+                    disabled={lmStudioBusy}
+                  />
+                </div>
+
+                {lmStudioStatus && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {lmStudioStatus}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -378,17 +476,20 @@ function OptionButton({
   label,
   active,
   onClick,
+  disabled,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        "w-full rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
+        "w-full rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
         active
           ? "border-primary bg-primary/10 text-foreground"
           : "border-border bg-transparent text-muted-foreground hover:bg-accent"

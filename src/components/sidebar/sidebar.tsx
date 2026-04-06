@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { electronAPI } from "@/lib/electron-api";
 import {
   ChevronRight,
@@ -58,8 +58,7 @@ export function Sidebar() {
     threads,
     activeProjectId,
     activeThreadId,
-    isStreaming,
-    streamingThreadId,
+    activeStreams,
     setActiveProject,
     setActiveThread,
     setActiveView,
@@ -70,15 +69,21 @@ export function Sidebar() {
 
   // Track recently completed threads for success indicator
   const [completedThread, setCompletedThread] = useState<string | null>(null);
-  const prevStreamingRef = useState({ prev: false })[0];
+  const prevStreamingIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (prevStreamingRef.prev && !isStreaming && streamingThreadId) {
-      setCompletedThread(streamingThreadId);
-      const timer = setTimeout(() => setCompletedThread(null), 3000);
-      return () => clearTimeout(timer);
+    const currentIds = new Set(Object.keys(activeStreams));
+    // Find threads that were streaming but no longer are
+    for (const threadId of prevStreamingIdsRef.current) {
+      if (!currentIds.has(threadId)) {
+        setCompletedThread(threadId);
+        const timer = setTimeout(() => setCompletedThread(null), 3000);
+        // Only track the first completed one
+        prevStreamingIdsRef.current = currentIds;
+        return () => clearTimeout(timer);
+      }
     }
-    prevStreamingRef.prev = isStreaming;
-  }, [isStreaming, streamingThreadId, prevStreamingRef]);
+    prevStreamingIdsRef.current = currentIds;
+  }, [activeStreams]);
 
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const { theme, toggleTheme } = useSettingsStore();
@@ -101,13 +106,6 @@ export function Sidebar() {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
-
-  // Auto-expand active project and fetch its threads
-  useEffect(() => {
-    if (activeProjectId) {
-      setExpandedProjects((prev) => new Set([...prev, activeProjectId]));
-    }
-  }, [activeProjectId]);
 
   // Fetch threads for all projects on mount
   useEffect(() => {
@@ -144,7 +142,12 @@ export function Sidebar() {
     try {
       const provider = defaultProvider;
       const providerInfo = getProviderEntry(providerCatalog, provider);
-      const providerModel = defaultModels[provider] || providerInfo.default_model;
+      const configuredModel = defaultModels[provider] || providerInfo.default_model;
+      const providerModel = providerInfo.models.some(
+        (item) => item.value === configuredModel
+      )
+        ? configuredModel
+        : providerInfo.default_model;
       const thread = (await electronAPI.invoke("thread:create", {
         projectId,
         title: "Nova thread",
@@ -160,15 +163,6 @@ export function Sidebar() {
     }
   };
 
-  const handleCreateNewThread = () => {
-    if (activeProjectId) {
-      handleNewThread(activeProjectId);
-    } else if (projects.length > 0) {
-      handleNewThread(projects[0].id);
-    } else {
-      setNewProjectOpen(true);
-    }
-  };
 
   const handleRenameProject = async () => {
     if (!renameProject || !renameProjectName.trim()) return;
@@ -249,7 +243,7 @@ export function Sidebar() {
       {/* Top actions — Codex style */}
       <div className="flex flex-col gap-0.5 px-3 pt-3 pb-1">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider px-2">Duck Codex</span>
+          <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider px-2">Duck Code</span>
           <button
             type="button"
             title="Esconder sidebar"
@@ -312,7 +306,8 @@ export function Sidebar() {
           ) : (
             projects.map((project) => {
               const projectThreads = threads[project.id] || [];
-              const isExpanded = expandedProjects.has(project.id);
+              const isExpanded =
+                expandedProjects.has(project.id) || activeProjectId === project.id;
 
               return (
                 <Collapsible
@@ -408,7 +403,7 @@ export function Sidebar() {
                                 )}
                                 onClick={() => handleSelectThread(thread)}
                               >
-                                {isStreaming && streamingThreadId === thread.id ? (
+                                {activeStreams[thread.id] ? (
                                   <Loader2 className="size-3.5 shrink-0 animate-spin text-blue-400" />
                                 ) : completedThread === thread.id ? (
                                   <CheckCircle2 className="size-3.5 shrink-0 text-emerald-500" />
@@ -416,6 +411,24 @@ export function Sidebar() {
                                   <MessageSquare className="size-3.5 shrink-0" />
                                 )}
                                 <span className="flex-1 truncate">{thread.title}</span>
+                                {activeStreams[thread.id]?.pendingToolApproval && (
+                                  <span className="shrink-0 rounded-full border border-amber-500/50 bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-500">
+                                    Acao necessaria
+                                  </span>
+                                )}
+                                {(typeof thread.lineAdditions === "number" ||
+                                  typeof thread.lineDeletions === "number") && (
+                                  <span className="shrink-0 text-xs tabular-nums">
+                                    {typeof thread.lineAdditions === "number" && (
+                                      <span className="text-emerald-500">+{thread.lineAdditions}</span>
+                                    )}
+                                    {typeof thread.lineAdditions === "number" &&
+                                      typeof thread.lineDeletions === "number" && " "}
+                                    {typeof thread.lineDeletions === "number" && (
+                                      <span className="text-red-500">-{thread.lineDeletions}</span>
+                                    )}
+                                  </span>
+                                )}
                                 <span className="shrink-0 text-[10px] text-muted-foreground/60">
                                   {relativeTime(thread.updatedAt)}
                                 </span>

@@ -24,6 +24,7 @@ const APPROVAL_MODES = [
 
 interface ChatInputProps {
   onSend: (content: string) => void;
+  onEnqueue: (content: string) => void;
   onStop: () => void;
   isStreaming: boolean;
   disabled?: boolean;
@@ -42,6 +43,7 @@ interface ChatInputProps {
 
 export function ChatInput({
   onSend,
+  onEnqueue,
   onStop,
   isStreaming,
   disabled,
@@ -62,14 +64,18 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = useCallback(() => {
-    if (!value.trim() || isStreaming || disabled) return;
-    onSend(value);
+    if (!value.trim() || disabled) return;
+    if (isStreaming) {
+      onEnqueue(value.trim());
+    } else {
+      onSend(value);
+    }
     setValue("");
     setImages([]);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [value, isStreaming, disabled, onSend]);
+  }, [value, isStreaming, disabled, onSend, onEnqueue]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -215,14 +221,30 @@ export function ChatInput({
 
             {/* Send / Stop */}
             {isStreaming ? (
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={onStop}
-                className="size-8 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300"
-              >
-                <Square className="size-3.5" />
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={!value.trim()}
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-full transition-colors",
+                    value.trim()
+                      ? "bg-foreground/20 text-foreground/70 hover:bg-foreground/30"
+                      : "bg-muted-foreground/10 text-muted-foreground/30 cursor-not-allowed"
+                  )}
+                  title="Enfileirar mensagem"
+                >
+                  <ArrowUp className="size-4" />
+                </button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={onStop}
+                  className="size-8 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300"
+                >
+                  <Square className="size-3.5" />
+                </Button>
+              </div>
             ) : (
               <button
                 type="button"

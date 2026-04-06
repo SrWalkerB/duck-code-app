@@ -1,4 +1,4 @@
-# Duck Codex - Electron Rewrite Design Spec
+# Duck Code - Electron Rewrite Design Spec
 
 ## Context
 

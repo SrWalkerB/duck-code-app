@@ -1,13 +1,13 @@
-# Duck Codex v2 — Programming-Focused Interactive Chat
+# Duck Code v2 — Programming-Focused Interactive Chat
 
 **Data:** 2026-04-02  
 **Status:** Aprovado  
 
 ## Contexto
 
-O Duck Codex é um app desktop (Tauri 2 + React) que serve como interface visual para o Claude Code CLI. Atualmente funciona como chat simples: envia prompts e recebe respostas em streaming. Porém, o CLI emite eventos interativos (permissões de tools, perguntas ao usuário, plan mode) que hoje são ignorados porque o backend não conecta stdin ao processo. Isso impede o uso real para programação.
+O Duck Code é um app desktop (Tauri 2 + React) que serve como interface visual para o Claude Code CLI. Atualmente funciona como chat simples: envia prompts e recebe respostas em streaming. Porém, o CLI emite eventos interativos (permissões de tools, perguntas ao usuário, plan mode) que hoje são ignorados porque o backend não conecta stdin ao processo. Isso impede o uso real para programação.
 
-**Objetivo:** Transformar o Duck Codex numa ferramenta de programação completa, com suporte a todos os eventos interativos do CLI, painéis auxiliares (file explorer, terminal, git) e design limpo inspirado no Codex da OpenAI.
+**Objetivo:** Transformar o Duck Code numa ferramenta de programação completa, com suporte a todos os eventos interativos do CLI, painéis auxiliares (file explorer, terminal, git) e design limpo inspirado no Codex da OpenAI.
 
 ## Decisões de Design
 

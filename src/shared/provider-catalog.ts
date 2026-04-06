@@ -8,7 +8,7 @@ export interface SharedProviderModel {
 }
 
 export interface SharedProviderCatalogEntry {
-  id: "claude" | "openai" | "codex" | "claude-code";
+  id: "claude" | "openai" | "codex" | "claude-code" | "lm-studio";
   label: string;
   default_model: string;
   models: SharedProviderModel[];
@@ -78,6 +78,16 @@ export const PROVIDER_CATALOG: SharedProviderCatalogEntry[] = [
       { label: "Sonnet 4.6", value: "claude-sonnet-4-6" },
       { label: "Haiku 4.5", value: "claude-haiku-4-5-20251001" },
     ],
+    capabilities: {
+      supports_effort: false,
+      requires_api_key: false,
+    },
+  },
+  {
+    id: "lm-studio",
+    label: "LM Studio (Local)",
+    default_model: "local-model",
+    models: [{ label: "Modelo local", value: "local-model" }],
     capabilities: {
       supports_effort: false,
       requires_api_key: false,

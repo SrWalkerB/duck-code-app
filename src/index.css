@@ -3,6 +3,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --mac-titlebar-height: 0px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -31,6 +32,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+}
+
+body.macos {
+  --mac-titlebar-height: 38px;
 }
 
 .dark {
@@ -109,6 +114,20 @@
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
   }
+}
+
+.app-window-content {
+  padding-top: var(--mac-titlebar-height);
+}
+
+.macos-drag-region {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--mac-titlebar-height);
+  -webkit-app-region: drag;
+  z-index: 100;
 }
 
 /* Scrollbar styling */

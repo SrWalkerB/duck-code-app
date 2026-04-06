@@ -19,9 +19,11 @@ export interface CliProviderConfig {
 export interface StdoutParseResult {
   text: string;
   sessionId: string | null;
+  error?: string;
 }
 
 export abstract class CliProviderBase implements ProviderRuntime {
+  readonly supportsNativeTools = true;
   protected readonly config: CliProviderConfig;
   protected readonly catalog: ProviderCatalogEntry;
 
@@ -40,10 +42,13 @@ export abstract class CliProviderBase implements ProviderRuntime {
     return { configured: true, last4: null };
   }
 
-  async setApiKey(_apiKey: string): Promise<void> {}
+  async setApiKey(apiKey: string): Promise<void> {
+    void apiKey;
+  }
   async removeApiKey(): Promise<void> {}
 
-  async testApiKey(_apiKey?: string): Promise<string> {
+  async testApiKey(apiKey?: string): Promise<string> {
+    void apiKey;
     return new Promise((resolve, reject) => {
       const proc = spawn(this.config.command, ["--version"], {
         stdio: ["ignore", "pipe", "pipe"],
@@ -88,8 +93,14 @@ export abstract class CliProviderBase implements ProviderRuntime {
   ): Promise<SendMessageResult> {
     const startedAt = Date.now();
     const args = this.buildArgs(request);
+    const preview = (value: string, limit = 220) =>
+      value.length > limit ? `${value.slice(0, limit)}...` : value;
 
     return new Promise((resolve, reject) => {
+      console.log(
+        `[provider:${this.config.id}] spawn command=${this.config.command} args=${JSON.stringify(args)} cwd=${request.projectPath || process.cwd()} model=${request.model} approval=${request.approvalMode} hasSession=${Boolean(request.sessionId)} historyMessages=${request.history.length}`
+      );
+
       const proc = spawn(this.config.command, args, {
         stdio: ["pipe", "pipe", "pipe"],
         env: { ...process.env },
@@ -98,29 +109,58 @@ export abstract class CliProviderBase implements ProviderRuntime {
 
       if (signal) {
         if (signal.aborted) {
+          console.log(
+            `[provider:${this.config.id}] abort requested before start`
+          );
           proc.kill();
           reject(new Error("Aborted"));
           return;
         }
-        signal.addEventListener("abort", () => proc.kill(), { once: true });
+        signal.addEventListener(
+          "abort",
+          () => {
+            console.log(
+              `[provider:${this.config.id}] abort signal received, killing pid=${proc.pid ?? "unknown"}`
+            );
+            proc.kill();
+          },
+          { once: true }
+        );
       }
 
-      proc.stdin.write(this.buildStdinInput(request));
+      const stdinInput = this.buildStdinInput(request);
+      console.log(
+        `[provider:${this.config.id}] stdin chars=${stdinInput.length} preview="${preview(stdinInput)}"`
+      );
+      proc.stdin.write(stdinInput);
       proc.stdin.end();
 
       let stderrOutput = "";
+      let stderrChunks = 0;
       proc.stderr.on("data", (chunk: Buffer) => {
-        stderrOutput += chunk.toString();
+        const text = chunk.toString();
+        stderrOutput += text;
+        stderrChunks += 1;
+        console.error(
+          `[provider:${this.config.id}] stderr chunk=${stderrChunks} chars=${text.length} preview="${preview(text)}"`
+        );
       });
 
       proc.on("error", (err) => {
+        console.error(
+          `[provider:${this.config.id}] process error pid=${proc.pid ?? "unknown"} message=${err.message}`
+        );
         onChunk({ type: "error", error: err.message });
         reject(new Error(`${this.config.command} erro: ${err.message}`));
       });
 
       const resultPromise = this.handleStdout(proc, onChunk);
 
-      proc.on("close", (code) => {
+      proc.on("close", (code, signalName) => {
+        console.log(
+          `[provider:${this.config.id}] close pid=${proc.pid ?? "unknown"} code=${code} signal=${signalName ?? "none"} durationMs=${Date.now() - startedAt} stderrChars=${stderrOutput.length}`
+        );
+
         if (code !== 0 && code !== null) {
           const errMsg =
             stderrOutput.trim() ||
@@ -130,15 +170,37 @@ export abstract class CliProviderBase implements ProviderRuntime {
           return;
         }
 
-        resultPromise.then((result) => {
-          onChunk({ type: "done" });
-          resolve({
-            text: result.text,
-            sessionId: result.sessionId,
-            costUsd: 0,
-            durationMs: Date.now() - startedAt,
+        resultPromise
+          .then((result) => {
+            if (result.error) {
+              console.error(
+                `[provider:${this.config.id}] parser marked error="${preview(result.error)}"`
+              );
+              onChunk({ type: "error", error: result.error });
+              reject(new Error(result.error));
+              return;
+            }
+
+            console.log(
+              `[provider:${this.config.id}] success textChars=${result.text.length} hasSession=${Boolean(result.sessionId)} durationMs=${Date.now() - startedAt}`
+            );
+            onChunk({ type: "done" });
+            resolve({
+              text: result.text,
+              sessionId: result.sessionId,
+              costUsd: 0,
+              durationMs: Date.now() - startedAt,
+            });
+          })
+          .catch((parseErr) => {
+            const message =
+              parseErr instanceof Error ? parseErr.message : String(parseErr);
+            console.error(
+              `[provider:${this.config.id}] parser failure: ${message}`
+            );
+            onChunk({ type: "error", error: message });
+            reject(new Error(message));
           });
-        });
       });
     });
   }

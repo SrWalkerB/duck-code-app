@@ -7,7 +7,7 @@
 
 ## Contexto
 
-O Duck Codex já possui um botão "Skills" na sidebar, mas está desabilitado. O objetivo é ativar essa tela para que o usuário consiga visualizar todas as skills disponíveis na máquina, lendo diretamente de `~/.claude/plugins/`. Isso dá visibilidade ao conjunto de capacidades instaladas no Claude Code CLI.
+O Duck Code já possui um botão "Skills" na sidebar, mas está desabilitado. O objetivo é ativar essa tela para que o usuário consiga visualizar todas as skills disponíveis na máquina, lendo diretamente de `~/.claude/plugins/`. Isso dá visibilidade ao conjunto de capacidades instaladas no Claude Code CLI.
 
 ---
 

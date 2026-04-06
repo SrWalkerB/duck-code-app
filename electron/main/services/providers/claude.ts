@@ -12,6 +12,8 @@ import { PROVIDER_CATALOG } from "../../../../src/shared/provider-catalog.js";
 const CATALOG = PROVIDER_CATALOG.find((p) => p.id === "claude") as ProviderCatalogEntry;
 
 export class ClaudeProvider implements ProviderRuntime {
+  readonly supportsNativeTools = false;
+
   getCatalogEntry(): ProviderCatalogEntry {
     return CATALOG;
   }

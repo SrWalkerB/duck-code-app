@@ -2,18 +2,22 @@ import { create } from "zustand";
 import type { ApprovalMode, ProviderId } from "@/lib/types";
 import { buildDefaultModelsMap, FALLBACK_PROVIDER_CATALOG } from "@/lib/providers";
 
+export type CodeEditorId = "vscode" | "cursor" | "windsurf" | "zed";
+
 interface SettingsState {
   theme: "dark" | "light";
   defaultProvider: ProviderId;
   defaultModels: Record<ProviderId, string>;
   defaultEffort: string;
   defaultApprovalMode: ApprovalMode;
+  preferredCodeEditor: CodeEditorId;
 
   setTheme: (theme: "dark" | "light") => void;
   setDefaultProvider: (provider: ProviderId) => void;
   setDefaultModel: (provider: ProviderId, model: string) => void;
   setDefaultEffort: (effort: string) => void;
   setDefaultApprovalMode: (mode: ApprovalMode) => void;
+  setPreferredCodeEditor: (editor: CodeEditorId) => void;
   toggleTheme: () => void;
 }
 
@@ -40,6 +44,7 @@ function saveSettings(state: SettingsState) {
         defaultModels: state.defaultModels,
         defaultEffort: state.defaultEffort,
         defaultApprovalMode: state.defaultApprovalMode,
+        preferredCodeEditor: state.preferredCodeEditor,
       })
     );
   } catch {
@@ -56,7 +61,22 @@ function applyTheme(theme: "dark" | "light") {
 }
 
 function isProvider(value: unknown): value is ProviderId {
-  return value === "claude" || value === "openai" || value === "codex" || value === "claude-code";
+  return (
+    value === "claude" ||
+    value === "openai" ||
+    value === "codex" ||
+    value === "claude-code" ||
+    value === "lm-studio"
+  );
+}
+
+function isCodeEditor(value: unknown): value is CodeEditorId {
+  return (
+    value === "vscode" ||
+    value === "cursor" ||
+    value === "windsurf" ||
+    value === "zed"
+  );
 }
 
 const saved = loadSettings();
@@ -72,6 +92,7 @@ const initialDefaultModels: Record<ProviderId, string> = {
   openai: savedDefaultModels.openai || fallbackModels.openai,
   codex: savedDefaultModels.codex || fallbackModels.codex,
   "claude-code": savedDefaultModels["claude-code"] || fallbackModels["claude-code"],
+  "lm-studio": savedDefaultModels["lm-studio"] || fallbackModels["lm-studio"],
 };
 
 const savedProvider = saved.defaultProvider;
@@ -91,6 +112,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       typeof saved.defaultEffort === "string" ? saved.defaultEffort : "medium",
     defaultApprovalMode:
       (saved.defaultApprovalMode as ApprovalMode) || "suggest",
+    preferredCodeEditor: isCodeEditor(saved.preferredCodeEditor)
+      ? saved.preferredCodeEditor
+      : "vscode",
 
     setTheme: (theme) => {
       applyTheme(theme);
@@ -118,6 +142,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     setDefaultApprovalMode: (defaultApprovalMode) => {
       set({ defaultApprovalMode });
       saveSettings({ ...get(), defaultApprovalMode });
+    },
+
+    setPreferredCodeEditor: (preferredCodeEditor) => {
+      set({ preferredCodeEditor });
+      saveSettings({ ...get(), preferredCodeEditor });
     },
 
     toggleTheme: () => {

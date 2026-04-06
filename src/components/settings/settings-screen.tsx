@@ -114,14 +114,14 @@ function SettingsRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-6 px-5 py-4">
-      <div className="min-w-0">
+    <div className="px-5 py-4 grid gap-3 md:grid-cols-[minmax(210px,260px)_1fr] md:items-center md:gap-6">
+      <div>
         <p className="text-sm font-medium text-foreground">{label}</p>
         {description && (
           <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
         )}
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }
@@ -156,6 +156,7 @@ function AppearanceSection() {
 
 function ProvidersSection() {
   const providerCatalog = useAppStore((s) => s.providerCatalog);
+  const fetchProviderCatalog = useAppStore((s) => s.fetchProviderCatalog);
   const {
     defaultProvider,
     defaultModels,
@@ -172,18 +173,89 @@ function ProvidersSection() {
     label: entry.label,
     value: entry.id as ProviderId,
   }));
-  const defaultModel = defaultModels[defaultProvider] || providerInfo.default_model;
+  const configuredModel = defaultModels[defaultProvider] || providerInfo.default_model;
+  const hasConfiguredModel = providerInfo.models.some(
+    (item) => item.value === configuredModel
+  );
+  const defaultModel = hasConfiguredModel
+    ? configuredModel
+    : providerInfo.default_model;
+  const [lmStudioBaseUrl, setLmStudioBaseUrl] = useState("");
+  const [lmStudioBusy, setLmStudioBusy] = useState(false);
+  const [lmStudioStatus, setLmStudioStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (defaultProvider !== "lm-studio") return;
+
+    electronAPI
+      .invoke("provider:get-config", { provider: "lm-studio" })
+      .then((config) => {
+        const cfg = config as { baseUrl?: string };
+        setLmStudioBaseUrl(cfg.baseUrl || "http://127.0.0.1:1234");
+      })
+      .catch((err) => {
+        setLmStudioStatus(String(err));
+      });
+  }, [defaultProvider]);
+
+  const handleSaveLmStudioConfig = async () => {
+    setLmStudioBusy(true);
+    setLmStudioStatus(null);
+    try {
+      const result = (await electronAPI.invoke("provider:set-config", {
+        provider: "lm-studio",
+        config: { baseUrl: lmStudioBaseUrl },
+      })) as { baseUrl?: string };
+      setLmStudioBaseUrl(result.baseUrl || lmStudioBaseUrl);
+      await fetchProviderCatalog();
+      setLmStudioStatus("Configuracao salva.");
+    } catch (err) {
+      setLmStudioStatus(String(err));
+    } finally {
+      setLmStudioBusy(false);
+    }
+  };
+
+  const handleTestLmStudioConnection = async () => {
+    setLmStudioBusy(true);
+    setLmStudioStatus(null);
+    try {
+      const message = (await electronAPI.invoke("provider:test-api-key", {
+        provider: "lm-studio",
+      })) as string;
+      await fetchProviderCatalog();
+      setLmStudioStatus(message);
+    } catch (err) {
+      setLmStudioStatus(String(err));
+    } finally {
+      setLmStudioBusy(false);
+    }
+  };
+
+  const handleRefreshLmStudioModels = async () => {
+    setLmStudioBusy(true);
+    setLmStudioStatus(null);
+    try {
+      await fetchProviderCatalog();
+      setLmStudioStatus("Modelos atualizados.");
+    } catch (err) {
+      setLmStudioStatus(String(err));
+    } finally {
+      setLmStudioBusy(false);
+    }
+  };
 
   return (
     <div className="max-w-2xl flex flex-col gap-6">
       <SectionTitle title="Providers" />
 
       <SettingsCard>
-        <SettingsRow
-          label="Default provider"
-          description="Provider used when creating new threads."
-        >
-          <div className="flex gap-2">
+        <div className="px-5 py-4">
+          <p className="text-sm font-medium text-foreground">Default provider</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Provider used when creating new threads.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
             {providerOptions.map((p) => (
               <SegmentButton
                 key={p.value}
@@ -193,8 +265,53 @@ function ProvidersSection() {
               />
             ))}
           </div>
-        </SettingsRow>
+        </div>
       </SettingsCard>
+
+      {defaultProvider === "lm-studio" && (
+        <SettingsCard>
+          <div className="px-5 py-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Servidor do LM Studio
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                URL local do servidor (ex: http://127.0.0.1:1234).
+              </p>
+            </div>
+
+            <input
+              type="text"
+              value={lmStudioBaseUrl}
+              onChange={(e) => setLmStudioBaseUrl(e.target.value)}
+              placeholder="http://127.0.0.1:1234"
+              className="mt-3 w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-border/80"
+            />
+
+            <div className="mt-3 flex gap-2">
+              <ActionButton
+                label={lmStudioBusy ? "Salvando..." : "Salvar URL"}
+                onClick={handleSaveLmStudioConfig}
+                disabled={lmStudioBusy}
+              />
+              <ActionButton
+                label={lmStudioBusy ? "Atualizando..." : "Atualizar modelos"}
+                onClick={handleRefreshLmStudioModels}
+                disabled={lmStudioBusy}
+              />
+              <ActionButton
+                label={lmStudioBusy ? "Testando..." : "Testar conexao"}
+                onClick={handleTestLmStudioConnection}
+                disabled={lmStudioBusy}
+              />
+            </div>
+
+            {lmStudioStatus && (
+              <p className="mt-3 text-xs text-muted-foreground">{lmStudioStatus}</p>
+            )}
+          </div>
+        </SettingsCard>
+      )}
 
       <SettingsCard>
         <div className="px-5 py-4 flex flex-col gap-3">
@@ -219,7 +336,7 @@ function ProvidersSection() {
             label="Default effort"
             description="Effort level for new threads."
           >
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 md:justify-end">
               {EFFORTS.map((e) => (
                 <SegmentButton
                   key={e.value}
@@ -236,7 +353,7 @@ function ProvidersSection() {
           label="Default permissions"
           description="Permission level for new threads."
         >
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 md:justify-end">
             {APPROVAL_MODES.map((a) => (
               <SegmentButton
                 key={a.value}

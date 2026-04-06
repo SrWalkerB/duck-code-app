@@ -23,6 +23,8 @@ function mapEffort(effort: string): string {
 }
 
 export class OpenAiProvider implements ProviderRuntime {
+  readonly supportsNativeTools = false;
+
   getCatalogEntry(): ProviderCatalogEntry {
     return CATALOG;
   }

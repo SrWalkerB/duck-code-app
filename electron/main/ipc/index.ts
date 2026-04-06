@@ -6,6 +6,7 @@ import { registerDialogHandlers } from "./dialog.js";
 import { registerProviderHandlers } from "./providers.js";
 import { registerShellHandlers } from "./shell.js";
 import { registerFileHandlers } from "./files.js";
+import { registerGitHandlers } from "./git.js";
 
 export function registerAllHandlers(mainWindow: BrowserWindow): void {
   registerProjectHandlers();
@@ -14,5 +15,6 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   registerDialogHandlers();
   registerProviderHandlers();
   registerShellHandlers();
+  registerGitHandlers();
   registerFileHandlers(mainWindow);
 }

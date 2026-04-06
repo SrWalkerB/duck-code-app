@@ -12,7 +12,7 @@ function createWindow(): void {
     minWidth: 800,
     minHeight: 600,
     show: false,
-    title: "Duck Codex",
+    title: "Duck Code",
     titleBarStyle: "hiddenInset",
     trafficLightPosition: { x: 12, y: 12 },
     webPreferences: {
@@ -40,6 +40,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
+  app.setName("Duck Code");
   await ensureDatabase();
   createWindow();
 

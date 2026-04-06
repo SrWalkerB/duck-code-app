@@ -18,11 +18,18 @@ export interface Thread {
   effort: string;
   approvalMode: ApprovalMode;
   sessionId: string | null;
+  lineAdditions?: number | null;
+  lineDeletions?: number | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export type ProviderId = "claude" | "openai" | "codex" | "claude-code";
+export type ProviderId =
+  | "claude"
+  | "openai"
+  | "codex"
+  | "claude-code"
+  | "lm-studio";
 
 export interface ProviderModel {
   label: string;
@@ -80,4 +87,11 @@ export interface ChatActivityPayload {
 
 export interface ChatDonePayload {
   runId: string;
+}
+
+export interface ChatToolApprovalPayload {
+  runId: string;
+  tool: string;
+  args: Record<string, unknown>;
+  description: string;
 }
