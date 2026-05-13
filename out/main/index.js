@@ -3,12 +3,12 @@ import { join } from "path";
 import { PrismaClient } from "@prisma/client";
 import { execFile, spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync, mkdirSync, watch } from "node:fs";
-import { join as join$1, resolve, relative } from "node:path";
-import { randomBytes, createCipheriv, createDecipheriv, scryptSync, randomUUID } from "node:crypto";
-import os, { homedir } from "node:os";
+import { join as join$1, resolve, relative, extname } from "node:path";
 import { z } from "zod";
-import { readFile, mkdir, writeFile, unlink, readdir, stat, rename } from "node:fs/promises";
+import { stat, readFile, access, mkdir, writeFile, unlink, readdir, rename } from "node:fs/promises";
 import { minimatch } from "minimatch";
+import { randomUUID } from "node:crypto";
+import { homedir } from "node:os";
 import * as pty from "node-pty";
 import __cjs_mod__ from "node:module";
 const __filename = import.meta.filename;
@@ -76,6 +76,45 @@ async function ensureDatabase() {
   `);
   await prisma.$executeRawUnsafe(`
     CREATE INDEX IF NOT EXISTS idx_tool_logs_thread_id ON tool_logs(thread_id)
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS benchmark_runs (
+      id TEXT PRIMARY KEY,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      providers_json TEXT NOT NULL,
+      profiles_json TEXT NOT NULL,
+      total_models INTEGER NOT NULL,
+      total_cases INTEGER NOT NULL,
+      succeeded_cases INTEGER NOT NULL,
+      failed_cases INTEGER NOT NULL,
+      recommended_provider TEXT,
+      recommended_model TEXT
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS benchmark_results (
+      id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      model TEXT NOT NULL,
+      profile TEXT NOT NULL,
+      duration_ms INTEGER NOT NULL,
+      output_chars INTEGER NOT NULL,
+      chars_per_second REAL NOT NULL,
+      success INTEGER NOT NULL,
+      error TEXT,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (run_id) REFERENCES benchmark_runs(id) ON DELETE CASCADE
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_benchmark_results_run_id ON benchmark_results(run_id)
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_benchmark_results_profile ON benchmark_results(profile)
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_benchmark_runs_created_at ON benchmark_runs(created_at)
   `);
 }
 function registerProjectHandlers() {
@@ -149,7 +188,7 @@ async function resolveUniqueThreadTitle(projectId, title) {
 }
 function runGitNumstat$1(cwd) {
   return new Promise((resolve2) => {
-    execFile("git", ["diff", "--numstat"], { cwd }, (error, stdout) => {
+    execFile("git", ["diff", "--numstat", "--", "."], { cwd }, (error, stdout) => {
       if (error) {
         resolve2(null);
         return;
@@ -270,167 +309,7 @@ function registerThreadHandlers() {
     await prisma.thread.delete({ where: { id: args.id } });
   });
 }
-const CREDENTIALS_FILE = "provider-credentials.json";
-function getFilePath$1() {
-  const dir = app.getPath("userData");
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  return join$1(dir, CREDENTIALS_FILE);
-}
-function readStore$1() {
-  const filePath = getFilePath$1();
-  if (!existsSync(filePath)) return {};
-  try {
-    return JSON.parse(readFileSync(filePath, "utf8"));
-  } catch {
-    return {};
-  }
-}
-function writeStore$1(store) {
-  writeFileSync(getFilePath$1(), JSON.stringify(store, null, 2), "utf8");
-}
-function getEncryptionKey() {
-  const seed = [
-    "duck-codex-provider-credentials",
-    os.hostname(),
-    os.homedir(),
-    os.userInfo().username
-  ].join(":");
-  return scryptSync(seed, "duck-codex-aes-gcm", 32);
-}
-function encrypt(plainText) {
-  const nonce = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", getEncryptionKey(), nonce);
-  const ciphertext = Buffer.concat([
-    cipher.update(plainText, "utf8"),
-    cipher.final()
-  ]);
-  const authTag = cipher.getAuthTag();
-  return {
-    ciphertext: ciphertext.toString("base64"),
-    nonce: nonce.toString("base64"),
-    authTag: authTag.toString("base64")
-  };
-}
-function decrypt(ciphertext, nonce, authTag) {
-  const decipher = createDecipheriv(
-    "aes-256-gcm",
-    getEncryptionKey(),
-    Buffer.from(nonce, "base64")
-  );
-  decipher.setAuthTag(Buffer.from(authTag, "base64"));
-  return Buffer.concat([
-    decipher.update(Buffer.from(ciphertext, "base64")),
-    decipher.final()
-  ]).toString("utf8").trim();
-}
-function loadApiKey(provider) {
-  const store = readStore$1();
-  const entry = store[provider];
-  if (!entry) {
-    throw new Error(`${provider.toUpperCase()} API key nao configurada`);
-  }
-  const decrypted = decrypt(entry.ciphertext, entry.nonce, entry.authTag);
-  if (!decrypted) {
-    throw new Error(`${provider.toUpperCase()} API key nao configurada`);
-  }
-  return decrypted;
-}
-function saveApiKey(provider, apiKey) {
-  const trimmed = apiKey.trim();
-  if (!trimmed) throw new Error("API key vazia");
-  const encrypted = encrypt(trimmed);
-  const store = readStore$1();
-  store[provider] = {
-    ciphertext: encrypted.ciphertext,
-    nonce: encrypted.nonce,
-    authTag: encrypted.authTag,
-    updatedAt: Date.now()
-  };
-  writeStore$1(store);
-}
-function removeApiKey(provider) {
-  const store = readStore$1();
-  delete store[provider];
-  writeStore$1(store);
-}
-function getApiKeyStatus(provider) {
-  try {
-    const key = loadApiKey(provider);
-    return {
-      configured: key.length > 0,
-      last4: key.length >= 4 ? key.slice(-4) : null
-    };
-  } catch {
-    return { configured: false, last4: null };
-  }
-}
 const PROVIDER_CATALOG = [
-  {
-    id: "claude",
-    label: "Claude API",
-    default_model: "claude-sonnet-4-6",
-    models: [
-      { label: "Opus 4.6", value: "claude-opus-4-6" },
-      { label: "Sonnet 4.6", value: "claude-sonnet-4-6" },
-      { label: "Haiku 4.5", value: "claude-haiku-4-5-20251001" }
-    ],
-    capabilities: {
-      supports_effort: false,
-      requires_api_key: true
-    }
-  },
-  {
-    id: "openai",
-    label: "OpenAI API",
-    default_model: "gpt-5.4",
-    models: [
-      { label: "GPT-5.4", value: "gpt-5.4" },
-      { label: "GPT-5.4 Mini", value: "gpt-5.4-mini" },
-      { label: "GPT-5.3 Codex", value: "gpt-5.3-codex" },
-      { label: "GPT-5.2 Codex", value: "gpt-5.2-codex" },
-      { label: "GPT-5.2", value: "gpt-5.2" },
-      { label: "GPT-5.1 Codex Max", value: "gpt-5.1-codex-max" },
-      { label: "GPT-5.1 Mini", value: "gpt-5.1-mini" }
-    ],
-    capabilities: {
-      supports_effort: true,
-      requires_api_key: true
-    }
-  },
-  {
-    id: "codex",
-    label: "Codex CLI",
-    default_model: "gpt-5.4",
-    models: [
-      { label: "GPT-5.4", value: "gpt-5.4" },
-      { label: "GPT-5.4 Mini", value: "gpt-5.4-mini" },
-      { label: "GPT-5.3 Codex", value: "gpt-5.3-codex" },
-      { label: "GPT-5.2 Codex", value: "gpt-5.2-codex" },
-      { label: "GPT-5.2", value: "gpt-5.2" },
-      { label: "GPT-5.1 Codex Max", value: "gpt-5.1-codex-max" },
-      { label: "GPT-5.1 Mini", value: "gpt-5.1-mini" }
-    ],
-    capabilities: {
-      supports_effort: false,
-      requires_api_key: false
-    }
-  },
-  {
-    id: "claude-code",
-    label: "Claude Code CLI",
-    default_model: "claude-sonnet-4-6",
-    models: [
-      { label: "Opus 4.6", value: "claude-opus-4-6" },
-      { label: "Sonnet 4.6", value: "claude-sonnet-4-6" },
-      { label: "Haiku 4.5", value: "claude-haiku-4-5-20251001" }
-    ],
-    capabilities: {
-      supports_effort: false,
-      requires_api_key: false
-    }
-  },
   {
     id: "lm-studio",
     label: "LM Studio (Local)",
@@ -440,734 +319,21 @@ const PROVIDER_CATALOG = [
       supports_effort: false,
       requires_api_key: false
     }
+  },
+  {
+    id: "ollama",
+    label: "Ollama (Local)",
+    default_model: "local-model",
+    models: [{ label: "Modelo local", value: "local-model" }],
+    capabilities: {
+      supports_effort: false,
+      requires_api_key: false
+    }
   }
 ];
-const CATALOG$1 = PROVIDER_CATALOG.find((p) => p.id === "claude");
-class ClaudeProvider {
-  supportsNativeTools = false;
-  getCatalogEntry() {
-    return CATALOG$1;
-  }
-  async getApiKeyStatus() {
-    return getApiKeyStatus("claude");
-  }
-  async setApiKey(apiKey) {
-    saveApiKey("claude", apiKey);
-  }
-  async removeApiKey() {
-    removeApiKey("claude");
-  }
-  async testApiKey(apiKey) {
-    const key = apiKey?.trim() || loadApiKey("claude");
-    const res = await fetch("https://api.anthropic.com/v1/models", {
-      headers: {
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01"
-      }
-    });
-    if (!res.ok) {
-      throw new Error(`Falha ao validar API key: ${await res.text()}`);
-    }
-    return "Conexao com Anthropic API OK";
-  }
-  async sendMessageStream(request, onChunk, signal) {
-    const apiKey = loadApiKey("claude");
-    const startedAt = Date.now();
-    const messages = request.history.filter((m) => m.content.trim().length > 0).map((m) => ({ role: m.role, content: m.content }));
-    messages.push({ role: "user", content: request.message });
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: request.model,
-        max_tokens: 8192,
-        stream: true,
-        system: "Be concise. If implementation details are missing, ask direct clarifying questions before assuming.",
-        messages
-      }),
-      signal
-    });
-    if (!res.ok) {
-      throw new Error(`Anthropic API erro: ${await res.text()}`);
-    }
-    let fullText = "";
-    let messageId = null;
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const data = line.slice(6).trim();
-        if (data === "[DONE]") continue;
-        try {
-          const event = JSON.parse(data);
-          if (event.type === "message_start" && event.message?.id) {
-            messageId = event.message.id;
-          }
-          if (event.type === "content_block_delta" && event.delta?.type === "text_delta" && event.delta.text) {
-            fullText += event.delta.text;
-            onChunk({ type: "delta", text: event.delta.text });
-          }
-        } catch {
-        }
-      }
-    }
-    onChunk({ type: "done" });
-    return {
-      text: fullText,
-      sessionId: messageId,
-      costUsd: 0,
-      durationMs: Date.now() - startedAt
-    };
-  }
-}
-const CATALOG = PROVIDER_CATALOG.find((p) => p.id === "openai");
-function mapEffort(effort) {
-  switch (effort) {
-    case "low":
-      return "low";
-    case "high":
-      return "high";
-    default:
-      return "medium";
-  }
-}
-class OpenAiProvider {
-  supportsNativeTools = false;
-  getCatalogEntry() {
-    return CATALOG;
-  }
-  async getApiKeyStatus() {
-    return getApiKeyStatus("openai");
-  }
-  async setApiKey(apiKey) {
-    saveApiKey("openai", apiKey);
-  }
-  async removeApiKey() {
-    removeApiKey("openai");
-  }
-  async testApiKey(apiKey) {
-    const key = apiKey?.trim() || loadApiKey("openai");
-    const res = await fetch("https://api.openai.com/v1/models", {
-      headers: { Authorization: `Bearer ${key}` }
-    });
-    if (!res.ok) {
-      throw new Error(`Falha ao validar API key: ${await res.text()}`);
-    }
-    return "Conexao com OpenAI API OK";
-  }
-  async sendMessageStream(request, onChunk, signal) {
-    const apiKey = loadApiKey("openai");
-    const startedAt = Date.now();
-    const payload = {
-      model: request.model,
-      input: request.message,
-      stream: true,
-      store: true,
-      reasoning: { effort: mapEffort(request.effort) },
-      instructions: "Be concise. If implementation details are missing, ask direct clarifying questions before assuming."
-    };
-    if (request.sessionId) {
-      payload.previous_response_id = request.sessionId;
-    }
-    const res = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload),
-      signal
-    });
-    if (!res.ok) {
-      throw new Error(`OpenAI API erro: ${await res.text()}`);
-    }
-    let fullText = "";
-    let responseId = null;
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const data = line.slice(6).trim();
-        if (data === "[DONE]") continue;
-        let event;
-        try {
-          event = JSON.parse(data);
-        } catch {
-          continue;
-        }
-        console.log("[openai-sse] type:", event.type);
-        if (event.type === "response.created" && event.response?.id) {
-          responseId = event.response.id;
-        }
-        if (event.type === "error") {
-          const err = event.error;
-          const errMsg = err?.message || event.message || JSON.stringify(event);
-          throw new Error(`OpenAI API: ${errMsg}`);
-        }
-        if (event.type === "response.failed") {
-          const resp = event.response;
-          const details = resp?.status_details;
-          const innerErr = details?.error;
-          const errMsg = innerErr?.message || resp?.status || "unknown failure";
-          throw new Error(`OpenAI API: ${errMsg}`);
-        }
-        if (event.type === "response.output_text.delta" && event.delta) {
-          fullText += event.delta;
-          onChunk({ type: "delta", text: event.delta });
-        }
-        if (event.type === "response.completed" && event.response?.output) {
-          const output = event.response.output;
-          const outputText = output.filter((item) => item.type === "message").flatMap((item) => item.content ?? []).filter((c) => c.type === "output_text" && c.text).map((c) => c.text).join("");
-          if (outputText && !fullText) {
-            fullText = outputText;
-            onChunk({ type: "delta", text: outputText });
-          }
-        }
-      }
-    }
-    onChunk({ type: "done" });
-    return {
-      text: fullText,
-      sessionId: responseId,
-      costUsd: 0,
-      durationMs: Date.now() - startedAt
-    };
-  }
-}
-class CliProviderBase {
-  supportsNativeTools = true;
-  config;
-  catalog;
-  constructor(config) {
-    this.config = config;
-    this.catalog = PROVIDER_CATALOG.find(
-      (p) => p.id === config.id
-    );
-  }
-  getCatalogEntry() {
-    return this.catalog;
-  }
-  async getApiKeyStatus() {
-    return { configured: true, last4: null };
-  }
-  async setApiKey(apiKey) {
-  }
-  async removeApiKey() {
-  }
-  async testApiKey(apiKey) {
-    return new Promise((resolve2, reject) => {
-      const proc = spawn(this.config.command, ["--version"], {
-        stdio: ["ignore", "pipe", "pipe"]
-      });
-      let stdout = "";
-      proc.stdout.on("data", (chunk) => {
-        stdout += chunk.toString();
-      });
-      proc.on("error", (err) => {
-        reject(
-          new Error(
-            `${this.config.command} nao encontrado: ${err.message}. ${this.config.installHint}`
-          )
-        );
-      });
-      proc.on("close", (code) => {
-        if (code === 0)
-          resolve2(`${this.config.command} disponivel: ${stdout.trim()}`);
-        else
-          reject(
-            new Error(`${this.config.command} retornou codigo ${code}`)
-          );
-      });
-    });
-  }
-  buildStdinInput(request) {
-    return request.message;
-  }
-  async sendMessageStream(request, onChunk, signal) {
-    const startedAt = Date.now();
-    const args = this.buildArgs(request);
-    const preview = (value, limit = 220) => value.length > limit ? `${value.slice(0, limit)}...` : value;
-    return new Promise((resolve2, reject) => {
-      console.log(
-        `[provider:${this.config.id}] spawn command=${this.config.command} args=${JSON.stringify(args)} cwd=${request.projectPath || process.cwd()} model=${request.model} approval=${request.approvalMode} hasSession=${Boolean(request.sessionId)} historyMessages=${request.history.length}`
-      );
-      const proc = spawn(this.config.command, args, {
-        stdio: ["pipe", "pipe", "pipe"],
-        env: { ...process.env },
-        ...request.projectPath && { cwd: request.projectPath }
-      });
-      if (signal) {
-        if (signal.aborted) {
-          console.log(
-            `[provider:${this.config.id}] abort requested before start`
-          );
-          proc.kill();
-          reject(new Error("Aborted"));
-          return;
-        }
-        signal.addEventListener(
-          "abort",
-          () => {
-            console.log(
-              `[provider:${this.config.id}] abort signal received, killing pid=${proc.pid ?? "unknown"}`
-            );
-            proc.kill();
-          },
-          { once: true }
-        );
-      }
-      const stdinInput = this.buildStdinInput(request);
-      console.log(
-        `[provider:${this.config.id}] stdin chars=${stdinInput.length} preview="${preview(stdinInput)}"`
-      );
-      proc.stdin.write(stdinInput);
-      proc.stdin.end();
-      let stderrOutput = "";
-      let stderrChunks = 0;
-      proc.stderr.on("data", (chunk) => {
-        const text = chunk.toString();
-        stderrOutput += text;
-        stderrChunks += 1;
-        console.error(
-          `[provider:${this.config.id}] stderr chunk=${stderrChunks} chars=${text.length} preview="${preview(text)}"`
-        );
-      });
-      proc.on("error", (err) => {
-        console.error(
-          `[provider:${this.config.id}] process error pid=${proc.pid ?? "unknown"} message=${err.message}`
-        );
-        onChunk({ type: "error", error: err.message });
-        reject(new Error(`${this.config.command} erro: ${err.message}`));
-      });
-      const resultPromise = this.handleStdout(proc, onChunk);
-      proc.on("close", (code, signalName) => {
-        console.log(
-          `[provider:${this.config.id}] close pid=${proc.pid ?? "unknown"} code=${code} signal=${signalName ?? "none"} durationMs=${Date.now() - startedAt} stderrChars=${stderrOutput.length}`
-        );
-        if (code !== 0 && code !== null) {
-          const errMsg = stderrOutput.trim() || `${this.config.command} saiu com codigo ${code}`;
-          onChunk({ type: "error", error: errMsg });
-          reject(new Error(errMsg));
-          return;
-        }
-        resultPromise.then((result) => {
-          if (result.error) {
-            console.error(
-              `[provider:${this.config.id}] parser marked error="${preview(result.error)}"`
-            );
-            onChunk({ type: "error", error: result.error });
-            reject(new Error(result.error));
-            return;
-          }
-          console.log(
-            `[provider:${this.config.id}] success textChars=${result.text.length} hasSession=${Boolean(result.sessionId)} durationMs=${Date.now() - startedAt}`
-          );
-          onChunk({ type: "done" });
-          resolve2({
-            text: result.text,
-            sessionId: result.sessionId,
-            costUsd: 0,
-            durationMs: Date.now() - startedAt
-          });
-        }).catch((parseErr) => {
-          const message = parseErr instanceof Error ? parseErr.message : String(parseErr);
-          console.error(
-            `[provider:${this.config.id}] parser failure: ${message}`
-          );
-          onChunk({ type: "error", error: message });
-          reject(new Error(message));
-        });
-      });
-    });
-  }
-}
-class CodexCliProvider extends CliProviderBase {
-  constructor() {
-    super({
-      id: "codex",
-      command: "codex",
-      installHint: "Instale com: npm install -g @openai/codex"
-    });
-  }
-  buildArgs(request) {
-    const args = ["exec", "--json", "-m", request.model];
-    switch (request.approvalMode) {
-      case "full-auto":
-        args.push("--full-auto");
-        break;
-      case "auto-edit":
-        args.push("--auto-edit");
-        break;
-    }
-    return args;
-  }
-  buildStdinInput(request) {
-    if (!request.history.length) return request.message;
-    const historyText = request.history.map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n\n");
-    return `${historyText}
-
-User: ${request.message}`;
-  }
-  handleStdout(proc, onChunk) {
-    return new Promise((resolve2) => {
-      let fullText = "";
-      let threadId = null;
-      let lineBuffer = "";
-      proc.stdout.on("data", (chunk) => {
-        lineBuffer += chunk.toString();
-        const lines = lineBuffer.split("\n");
-        lineBuffer = lines.pop() ?? "";
-        for (const line of lines) {
-          this.processLine(line, onChunk, (text) => {
-            fullText += text;
-          }, (id) => {
-            threadId = id;
-          });
-        }
-      });
-      proc.stdout.on("end", () => {
-        if (lineBuffer.trim()) {
-          this.processLine(lineBuffer, onChunk, (text) => {
-            fullText += text;
-          }, (id) => {
-            threadId = id;
-          });
-        }
-        resolve2({ text: fullText, sessionId: threadId });
-      });
-    });
-  }
-  processLine(line, onChunk, appendText, setThreadId) {
-    const trimmed = line.trim();
-    if (!trimmed) return;
-    let event;
-    try {
-      event = JSON.parse(trimmed);
-    } catch {
-      return;
-    }
-    const eventType = event.type;
-    if (eventType === "item.completed") {
-      const item = event.item;
-      console.log("[codex-cli] item.completed:", JSON.stringify(item, null, 0)?.slice(0, 500));
-    } else {
-      console.log("[codex-cli] event:", eventType);
-    }
-    if (eventType === "thread.started" && event.thread_id) {
-      setThreadId(event.thread_id);
-    }
-    if (eventType === "message.delta") {
-      const delta = event.delta;
-      if (delta) {
-        appendText(delta);
-        onChunk({ type: "delta", text: delta });
-      }
-    }
-    if (eventType === "item.completed") {
-      const item = event.item;
-      if (!item) return;
-      const itemType = item.type;
-      if (itemType === "agent_message" && typeof item.text === "string") {
-        appendText(item.text);
-        onChunk({ type: "delta", text: item.text });
-        return;
-      }
-      const summary = this.extractActivitySummary(item);
-      const toolName = item.name || item.tool || itemType || "action";
-      const kind = itemType.includes("result") || itemType.includes("output") ? "tool_result" : "tool_call";
-      onChunk({
-        type: "activity",
-        activity: { kind, tool: toolName, summary }
-      });
-    }
-    if (eventType === "turn.started") {
-      onChunk({
-        type: "activity",
-        activity: { kind: "info", summary: "Iniciando turno..." }
-      });
-    }
-  }
-  extractActivitySummary(item) {
-    if (typeof item.command === "string") return item.command;
-    const args = item.arguments || item.input || item.params;
-    if (typeof args === "string") {
-      try {
-        const parsed = JSON.parse(args);
-        const formatted = this.formatArgs(parsed);
-        if (formatted) return formatted;
-      } catch {
-        if (args.length > 0 && args.length < 120) return args;
-      }
-    }
-    if (args && typeof args === "object" && !Array.isArray(args)) {
-      const formatted = this.formatArgs(args);
-      if (formatted) return formatted;
-    }
-    const output = item.output ?? item.text ?? item.content ?? item.result;
-    if (typeof output === "string" && output.length > 0) {
-      return output.length > 120 ? `${output.slice(0, 120)}...` : output;
-    }
-    if (Array.isArray(output)) {
-      const firstText = output.find((o) => typeof o === "object" && o !== null && "text" in o);
-      if (firstText && typeof firstText.text === "string") {
-        const t = firstText.text;
-        return t.length > 120 ? `${t.slice(0, 120)}...` : t;
-      }
-    }
-    const name = item.name || item.tool || item.type || "";
-    return name;
-  }
-  formatArgs(args) {
-    for (const key of ["command", "cmd", "path", "file_path", "filename", "pattern", "query", "url", "content"]) {
-      const val = args[key];
-      if (typeof val === "string" && val.length > 0) {
-        return val.length > 120 ? `${val.slice(0, 120)}...` : val;
-      }
-    }
-    for (const val of Object.values(args)) {
-      if (typeof val === "string" && val.length > 0 && val.length < 120) return val;
-    }
-    return null;
-  }
-}
-class ClaudeCodeCliProvider extends CliProviderBase {
-  constructor() {
-    super({
-      id: "claude-code",
-      command: "claude",
-      installHint: "Instale com: npm install -g @anthropic-ai/claude-code"
-    });
-  }
-  buildArgs(request) {
-    const args = [
-      "--print",
-      "--output-format",
-      "stream-json",
-      "--model",
-      request.model,
-      "--verbose"
-    ];
-    if (request.sessionId) {
-      args.push("--resume", request.sessionId);
-    }
-    switch (request.approvalMode) {
-      case "full-auto":
-        args.push("--dangerously-skip-permissions");
-        break;
-      case "auto-edit":
-        args.push("--allowedTools", "Edit,Write,Read,Glob,Grep,LS,Bash");
-        break;
-      case "suggest":
-        args.push("--allowedTools", "Read,Glob,Grep,LS");
-        break;
-    }
-    return args;
-  }
-  summarizeToolInput(toolName, input) {
-    if (!input) return `Usando ${toolName}...`;
-    const t = toolName.toLowerCase();
-    if (t === "read" || t === "write" || t === "edit" || t === "glob" || t === "grep") {
-      const target = input.file_path || input.path || input.pattern || "";
-      if (target) {
-        const short = target.split("/").slice(-2).join("/");
-        return short;
-      }
-    }
-    if (t === "bash" || t === "shell" || t === "terminal" || t === "exec") {
-      const cmd = input.command || input.cmd || "";
-      return cmd.slice(0, 200) || `Executando comando...`;
-    }
-    if (t === "ls" || t === "list") {
-      const dir = input.path || input.directory || ".";
-      return dir;
-    }
-    const firstValue = Object.values(input).find(
-      (v) => typeof v === "string" && v.length > 0
-    );
-    return firstValue ? firstValue.slice(0, 150) : `Usando ${toolName}...`;
-  }
-  handleStdout(proc, onChunk) {
-    return new Promise((resolve2) => {
-      const preview = (value, limit = 220) => value.length > limit ? `${value.slice(0, limit)}...` : value;
-      let fullText = "";
-      let sessionId = null;
-      let runError = null;
-      let lineBuffer = "";
-      let eventCount = 0;
-      let parseErrorCount = 0;
-      proc.stdout.on("data", (chunk) => {
-        lineBuffer += chunk.toString();
-        const lines = lineBuffer.split("\n");
-        lineBuffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-          let event;
-          try {
-            event = JSON.parse(trimmed);
-          } catch {
-            parseErrorCount += 1;
-            if (parseErrorCount <= 3) {
-              console.warn(
-                `[provider:claude-code] non-json stdout line ignored chars=${trimmed.length} preview="${preview(trimmed)}"`
-              );
-            }
-            continue;
-          }
-          eventCount += 1;
-          if (eventCount <= 5 || eventCount % 50 === 0) {
-            console.log(
-              `[provider:claude-code] stdout event=${String(event.type)} index=${eventCount}`
-            );
-          }
-          if (event.type === "assistant" || event.type === "content_block_delta") {
-            const msg = event.message;
-            if (msg?.content) {
-              const blocks = msg.content;
-              for (const block of blocks) {
-                if (block.type === "text" && typeof block.text === "string") {
-                  const newText = block.text.slice(fullText.length);
-                  if (newText) {
-                    fullText = block.text;
-                    onChunk({ type: "delta", text: newText });
-                  }
-                }
-                if (block.type === "tool_use") {
-                  const toolName = block.name || "unknown";
-                  const input = block.input;
-                  const summary = this.summarizeToolInput(toolName, input);
-                  onChunk({
-                    type: "activity",
-                    activity: {
-                      kind: "tool_call",
-                      tool: toolName,
-                      summary
-                    }
-                  });
-                }
-                if (block.type === "tool_result") {
-                  const toolName = block.tool_use_id || "";
-                  const content = typeof block.content === "string" ? block.content : JSON.stringify(block.content ?? "").slice(0, 200);
-                  onChunk({
-                    type: "activity",
-                    activity: {
-                      kind: "tool_result",
-                      tool: toolName,
-                      summary: content.slice(0, 300)
-                    }
-                  });
-                }
-              }
-            }
-          }
-          if (event.type === "content_block_start") {
-            const contentBlock = event.content_block;
-            if (contentBlock?.type === "tool_use") {
-              const toolName = contentBlock.name || "unknown";
-              onChunk({
-                type: "activity",
-                activity: {
-                  kind: "tool_call",
-                  tool: toolName,
-                  summary: `Usando ${toolName}...`
-                }
-              });
-            }
-          }
-          if (event.type === "tool_result" || event.type === "tool_use") {
-            const toolName = event.name || event.tool || "unknown";
-            const input = event.input;
-            const isResult = event.type === "tool_result";
-            const summary = isResult ? typeof event.content === "string" ? event.content.slice(0, 300) : "Concluído" : this.summarizeToolInput(toolName, input);
-            onChunk({
-              type: "activity",
-              activity: {
-                kind: isResult ? "tool_result" : "tool_call",
-                tool: toolName,
-                summary
-              }
-            });
-          }
-          if (event.type === "result") {
-            if (typeof event.session_id === "string") {
-              sessionId = event.session_id;
-            }
-            if (typeof event.sessionId === "string") {
-              sessionId = event.sessionId;
-            }
-            if (event.is_error === true && typeof event.result === "string") {
-              runError = event.result;
-              console.error(
-                `[provider:claude-code] result marked is_error=true message="${preview(event.result)}"`
-              );
-            }
-            if (typeof event.result === "string" && !fullText) {
-              fullText = event.result;
-              onChunk({ type: "delta", text: event.result });
-            }
-          }
-        }
-      });
-      proc.stdout.on("end", () => {
-        if (lineBuffer.trim()) {
-          try {
-            const event = JSON.parse(lineBuffer.trim());
-            if (event.type === "result") {
-              if (typeof event.session_id === "string") {
-                sessionId = event.session_id;
-              }
-              if (typeof event.sessionId === "string") {
-                sessionId = event.sessionId;
-              }
-              if (event.is_error === true && typeof event.result === "string") {
-                runError = event.result;
-                console.error(
-                  `[provider:claude-code] trailing result is_error=true message="${preview(event.result)}"`
-                );
-              }
-              if (typeof event.result === "string" && !fullText) {
-                fullText = event.result;
-                onChunk({ type: "delta", text: event.result });
-              }
-            }
-          } catch {
-            if (!fullText) {
-              fullText = lineBuffer;
-              onChunk({ type: "delta", text: lineBuffer });
-              console.warn(
-                `[provider:claude-code] trailing stdout treated as plain text chars=${lineBuffer.length} preview="${preview(lineBuffer)}"`
-              );
-            }
-          }
-        }
-        console.log(
-          `[provider:claude-code] stdout end events=${eventCount} parseErrors=${parseErrorCount} fullTextChars=${fullText.length} hasSession=${Boolean(sessionId)} hasRunError=${Boolean(runError)}`
-        );
-        resolve2({ text: fullText, sessionId, error: runError ?? void 0 });
-      });
-    });
-  }
-}
 const PROVIDER_CONFIG_FILE = "provider-config.json";
 const DEFAULT_LM_STUDIO_BASE_URL = "http://127.0.0.1:1234";
+const DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434";
 function getFilePath() {
   const dir = app.getPath("userData");
   if (!existsSync(dir)) {
@@ -1203,69 +369,104 @@ function setLmStudioBaseUrl(url) {
   writeStore(store);
   return normalized;
 }
-const BASE_CATALOG = PROVIDER_CATALOG.find(
-  (p) => p.id === "lm-studio"
-);
-class LmStudioProvider {
-  supportsNativeTools = false;
-  catalog = BASE_CATALOG;
+function getOllamaBaseUrl() {
+  const store = readStore();
+  return normalizeBaseUrl(store.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL);
+}
+function setOllamaBaseUrl(url) {
+  const normalized = normalizeBaseUrl(url);
+  const store = readStore();
+  store.ollamaBaseUrl = normalized;
+  writeStore(store);
+  return normalized;
+}
+class OpenAICompatibleProvider {
+  toolMode = "openai";
   getCatalogEntry() {
     return this.catalog;
   }
-  async refreshCatalogModels() {
-    const modelValues = await this.fetchModelValues();
-    if (modelValues.length === 0) {
-      return;
-    }
-    const models = modelValues.map((value) => ({ label: value, value }));
-    this.catalog = {
-      ...BASE_CATALOG,
-      default_model: models[0]?.value || BASE_CATALOG.default_model,
-      models
-    };
-  }
+  // Default stubs — subclasses override as needed
   async getApiKeyStatus() {
     return { configured: true, last4: null };
   }
-  async setApiKey(apiKey) {
+  async setApiKey(_apiKey) {
   }
   async removeApiKey() {
   }
   async testApiKey(_apiKey) {
     const modelValues = await this.fetchModelValues();
     if (modelValues.length === 0) {
-      return "Conexao com LM Studio OK, mas nenhum modelo LLM disponivel no endpoint /api/v1/models.";
+      return `Conexao OK, mas nenhum modelo disponivel.`;
     }
-    return `Conexao com LM Studio OK (${modelValues.length} modelo(s) disponivel(is)).`;
+    return `Conexao OK (${modelValues.length} modelo(s) disponivel(is)).`;
   }
+  // ---------------------------------------------------------------------------
+  // Streaming — handles content, reasoning, and tool_calls
+  // ---------------------------------------------------------------------------
   async sendMessageStream(request, onChunk, signal) {
     const startedAt = Date.now();
-    const baseUrl = getLmStudioBaseUrl();
-    const messages = [];
-    for (const msg of request.history) {
-      messages.push({ role: msg.role, content: msg.content });
+    const baseUrl = this.getBaseUrl();
+    const messages = this.buildMessages(request);
+    const body = {
+      model: request.model,
+      messages,
+      stream: true
+    };
+    if (request.tools && request.tools.length > 0) {
+      body.tools = request.tools;
     }
-    messages.push({ role: "user", content: request.message });
+    {
+      const promptChars = messages.reduce(
+        (n, m) => n + (typeof m.content === "string" ? m.content.length : JSON.stringify(m.content ?? "").length),
+        0
+      );
+      const toolChars = body.tools ? JSON.stringify(body.tools).length : 0;
+      console.log(
+        `[provider] model=${request.model} messages=${messages.length} promptChars=${promptChars} toolChars=${toolChars} approxTokens=${Math.round((promptChars + toolChars) / 4)}`
+      );
+    }
     const res = await fetch(`${baseUrl}/v1/chat/completions`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        model: request.model,
-        messages,
-        stream: true
-      }),
+      headers: {
+        "content-type": "application/json",
+        ...this.getAuthHeaders()
+      },
+      body: JSON.stringify(body),
       signal
     });
     if (!res.ok) {
-      throw new Error(`LM Studio API erro: ${await res.text()}`);
+      throw new Error(`API erro: ${await res.text()}`);
     }
     let fullText = "";
     let thinkingText = "";
     let thinkingEmitted = false;
     let responseId = null;
+    let harmonyBuffer = "";
+    let harmonyMode = false;
+    let firstContentSeen = false;
+    let bufferedContent = "";
+    const HARMONY_TOKEN_RE = /<\|[^>|]*\|>\s*(?:commentary|analysis|final|assistant|user|system|tool|developer)?\b[ \t:]*/gi;
+    const HARMONY_BARE_TOKEN_RE = /<\|[^>|]*\|>/g;
+    const HARMONY_PARTIAL_RE = /<\|[^>|]*$/;
+    const sanitizeHarmony = (chunk) => {
+      let buf = harmonyBuffer + chunk;
+      buf = buf.replace(HARMONY_TOKEN_RE, "");
+      buf = buf.replace(HARMONY_BARE_TOKEN_RE, "");
+      const partial = buf.match(HARMONY_PARTIAL_RE);
+      if (partial) {
+        harmonyBuffer = partial[0];
+        return buf.slice(0, -partial[0].length);
+      }
+      harmonyBuffer = "";
+      return buf;
+    };
+    const stripHarmonyFinal = (s) => {
+      return s.replace(HARMONY_TOKEN_RE, "").replace(HARMONY_BARE_TOKEN_RE, "").replace(/\bfunctions\.[a-z_]+\??/gi, "").replace(/\b(?:commentary|analysis|final)\b\s*[:]?/gi, "").replace(/\bbash\}/g, "").replace(/^[\s,;:.}]+/, "").trim();
+    };
+    const toolCallMap = /* @__PURE__ */ new Map();
     const reader = res.body?.getReader();
     if (!reader) {
-      throw new Error("Resposta de stream invalida do LM Studio.");
+      throw new Error("Resposta de stream invalida.");
     }
     const decoder = new TextDecoder();
     let buffer = "";
@@ -1303,8 +504,37 @@ class LmStudioProvider {
               activity: { kind: "thinking", summary: thinkingText.trim() }
             });
           }
-          fullText += delta.content;
-          onChunk({ type: "delta", text: delta.content });
+          if (!firstContentSeen) {
+            firstContentSeen = true;
+            if (delta.content.trimStart().startsWith("<|")) {
+              harmonyMode = true;
+            }
+          }
+          if (harmonyMode) {
+            bufferedContent += delta.content;
+          } else {
+            const cleaned = sanitizeHarmony(delta.content);
+            if (cleaned) {
+              fullText += cleaned;
+              onChunk({ type: "delta", text: cleaned });
+            }
+          }
+        }
+        if (delta.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            const existing = toolCallMap.get(tc.index);
+            if (existing) {
+              if (tc.function?.arguments) {
+                existing.arguments += tc.function.arguments;
+              }
+            } else {
+              toolCallMap.set(tc.index, {
+                id: tc.id ?? `call_${tc.index}`,
+                name: tc.function?.name ?? "",
+                arguments: tc.function?.arguments ?? ""
+              });
+            }
+          }
         }
       }
     }
@@ -1314,74 +544,213 @@ class LmStudioProvider {
         activity: { kind: "thinking", summary: thinkingText.trim() }
       });
     }
-    onChunk({ type: "done" });
+    if (harmonyMode && bufferedContent) {
+      console.log(`[harmony] raw buffered (${bufferedContent.length} chars):`, bufferedContent.slice(0, 800));
+      let candidate = null;
+      const finalMatches = [
+        ...bufferedContent.matchAll(
+          /<\|channel\|>\s*final\s*<\|message\|>([\s\S]*?)(?=<\|end\|>|<\|return\|>|<\|start\|>|<\|channel\|>|$)/gi
+        )
+      ];
+      if (finalMatches.length > 0) {
+        candidate = finalMatches[finalMatches.length - 1][1];
+      } else {
+        const allMessages = [
+          ...bufferedContent.matchAll(
+            /<\|message\|>([\s\S]*?)(?=<\|end\|>|<\|return\|>|<\|channel\|>|<\|start\|>|$)/gi
+          )
+        ];
+        if (allMessages.length > 0) {
+          candidate = allMessages[allMessages.length - 1][1];
+        }
+      }
+      if (!candidate) candidate = bufferedContent;
+      const cleaned = stripHarmonyFinal(candidate);
+      if (cleaned) {
+        fullText = cleaned;
+        onChunk({ type: "delta", text: cleaned });
+      } else {
+        console.warn(`[harmony] empty after sanitization — buffer was: ${bufferedContent.slice(0, 200)}`);
+        const fallback = "[modelo retornou resposta vazia ou malformada — tente de novo]";
+        fullText = fallback;
+        onChunk({ type: "delta", text: fallback });
+      }
+    } else {
+      if (harmonyBuffer) {
+        const flushed = harmonyBuffer.replace(HARMONY_TOKEN_RE, "");
+        if (flushed) {
+          fullText += flushed;
+          onChunk({ type: "delta", text: flushed });
+        }
+        harmonyBuffer = "";
+      }
+      const cleanedFull = stripHarmonyFinal(fullText);
+      if (cleanedFull !== fullText) {
+        fullText = cleanedFull;
+      }
+    }
+    const toolCalls = [];
+    for (const [, acc] of toolCallMap) {
+      if (acc.name) {
+        toolCalls.push({
+          id: acc.id,
+          type: "function",
+          function: { name: acc.name, arguments: acc.arguments }
+        });
+      }
+    }
+    if (!fullText && toolCalls.length === 0 && thinkingText.trim()) {
+      const fallback = thinkingText.trim();
+      fullText = fallback;
+      onChunk({ type: "delta", text: fallback });
+    } else if (!fullText && toolCalls.length === 0) {
+      const fallback = "[modelo retornou resposta vazia — tente novamente ou troque de modelo]";
+      fullText = fallback;
+      onChunk({ type: "delta", text: fallback });
+    }
     return {
       text: fullText,
       sessionId: responseId,
       costUsd: 0,
-      durationMs: Date.now() - startedAt
+      durationMs: Date.now() - startedAt,
+      toolCalls: toolCalls.length > 0 ? toolCalls : void 0
     };
   }
+  // ---------------------------------------------------------------------------
+  // Build messages array — preserves user, assistant (with tool_calls), and tool roles
+  // ---------------------------------------------------------------------------
+  buildMessages(request) {
+    const messages = [];
+    if (request.systemPrompt) {
+      messages.push({ role: "system", content: request.systemPrompt });
+    }
+    for (const msg of request.history) {
+      if (msg.role === "tool") {
+        messages.push({
+          role: "tool",
+          content: msg.content,
+          tool_call_id: msg.tool_call_id
+        });
+      } else if (msg.role === "assistant" && msg.tool_calls && msg.tool_calls.length > 0) {
+        messages.push({
+          role: "assistant",
+          content: msg.content || null,
+          tool_calls: msg.tool_calls
+        });
+      } else {
+        messages.push({ role: msg.role, content: msg.content });
+      }
+    }
+    if (request.message) {
+      messages.push({ role: "user", content: request.message });
+    }
+    return messages;
+  }
+}
+const BASE_CATALOG$1 = PROVIDER_CATALOG.find(
+  (p) => p.id === "lm-studio"
+);
+class LmStudioProvider extends OpenAICompatibleProvider {
+  catalog = BASE_CATALOG$1;
+  getBaseUrl() {
+    return getLmStudioBaseUrl();
+  }
+  getAuthHeaders() {
+    return {};
+  }
+  async refreshCatalogModels() {
+    const modelValues = await this.fetchModelValues();
+    if (modelValues.length === 0) {
+      return;
+    }
+    const models = modelValues.map((value) => ({ label: value, value }));
+    this.catalog = {
+      ...BASE_CATALOG$1,
+      default_model: models[0]?.value || BASE_CATALOG$1.default_model,
+      models
+    };
+  }
+  async testApiKey(_apiKey) {
+    const modelValues = await this.fetchModelValues();
+    if (modelValues.length === 0) {
+      return "Conexao com LM Studio OK, mas nenhum modelo LLM disponivel no endpoint /api/v1/models.";
+    }
+    return `Conexao com LM Studio OK (${modelValues.length} modelo(s) disponivel(is)).`;
+  }
   async fetchModelValues() {
-    const baseUrl = getLmStudioBaseUrl();
+    const baseUrl = this.getBaseUrl();
     const res = await fetch(`${baseUrl}/api/v1/models`);
     if (!res.ok) {
       throw new Error(`Falha ao consultar modelos no LM Studio: ${await res.text()}`);
     }
     const json = await res.json();
-    const fromNative = this.extractFromNativeModels(json.models || []);
+    const nativeModels = Array.isArray(json.models) ? json.models : [];
+    const fromNative = this.extractFromNativeModels(nativeModels);
     if (fromNative.length > 0) {
       return fromNative;
     }
-    const fromCompat = (json.data || []).map((item) => item.id || item.name || item.key || item.display_name || "").filter((value) => Boolean(value));
+    const fromCompat = (Array.isArray(json.data) ? json.data : []).filter((item) => {
+      const t = (item.type || "").toLowerCase();
+      return t !== "embedding" && t !== "embeddings";
+    }).map((item) => item.id || item.key || item.name || item.display_name || "").map((value) => value.trim()).filter((value) => Boolean(value));
     if (fromCompat.length > 0) {
       return [...new Set(fromCompat)];
     }
-    return this.extractFromUnknown(json);
+    return [];
   }
   extractFromNativeModels(models) {
     if (!Array.isArray(models) || models.length === 0) return [];
     const values = models.filter((item) => (item.type || "llm") !== "embedding").map(
       (item) => item.key || item.selected_variant || item.id || item.name || item.display_name || item.variants?.[0] || ""
-    ).filter((value) => Boolean(value));
+    ).map((value) => value.trim()).filter((value) => Boolean(value));
     return [...new Set(values)];
   }
-  extractFromUnknown(input) {
-    const queue = [input];
-    const found = /* @__PURE__ */ new Set();
-    while (queue.length > 0) {
-      const node = queue.shift();
-      if (!node || typeof node !== "object") continue;
-      if (Array.isArray(node)) {
-        for (const item of node) queue.push(item);
-        continue;
-      }
-      const obj = node;
-      const candidates = [
-        obj.key,
-        obj.id,
-        obj.name,
-        obj.selected_variant,
-        obj.display_name
-      ];
-      for (const candidate of candidates) {
-        if (typeof candidate === "string" && candidate.trim()) {
-          found.add(candidate.trim());
-        }
-      }
-      for (const value of Object.values(obj)) {
-        if (value && typeof value === "object") queue.push(value);
-      }
+}
+const BASE_CATALOG = PROVIDER_CATALOG.find(
+  (p) => p.id === "ollama"
+);
+class OllamaProvider extends OpenAICompatibleProvider {
+  catalog = BASE_CATALOG;
+  getBaseUrl() {
+    return getOllamaBaseUrl();
+  }
+  getAuthHeaders() {
+    return {};
+  }
+  async refreshCatalogModels() {
+    const modelValues = await this.fetchModelValues();
+    if (modelValues.length === 0) {
+      return;
     }
-    return [...found];
+    const models = modelValues.map((value) => ({ label: value, value }));
+    this.catalog = {
+      ...BASE_CATALOG,
+      default_model: models[0]?.value || BASE_CATALOG.default_model,
+      models
+    };
+  }
+  async testApiKey(_apiKey) {
+    const modelValues = await this.fetchModelValues();
+    if (modelValues.length === 0) {
+      return "Conexao com Ollama OK, mas nenhum modelo disponivel. Use 'ollama pull <modelo>' para baixar.";
+    }
+    return `Conexao com Ollama OK (${modelValues.length} modelo(s) disponivel(is)).`;
+  }
+  async fetchModelValues() {
+    const baseUrl = this.getBaseUrl();
+    const res = await fetch(`${baseUrl}/api/tags`);
+    if (!res.ok) {
+      throw new Error(
+        `Falha ao consultar modelos no Ollama: ${await res.text()}`
+      );
+    }
+    const json = await res.json();
+    return (json.models || []).map((m) => m.name || m.model || "").filter((v) => Boolean(v));
   }
 }
 const providers = {
-  claude: new ClaudeProvider(),
-  openai: new OpenAiProvider(),
-  codex: new CodexCliProvider(),
-  "claude-code": new ClaudeCodeCliProvider(),
-  "lm-studio": new LmStudioProvider()
+  "lm-studio": new LmStudioProvider(),
+  ollama: new OllamaProvider()
 };
 function getProvider(id) {
   const provider = providers[id];
@@ -1392,6 +761,106 @@ function getProvider(id) {
 }
 function getAllProviders() {
   return Object.values(providers);
+}
+const MAX_SYSTEM_PROMPT_CHARS = 6e3;
+function buildIdentitySection() {
+  return `You are a skilled software engineer working directly in the user's project. You write clean, well-structured, production-quality code. You think before you act: understand the existing codebase before making changes, and explain your reasoning.
+
+# LANGUAGE — TOP PRIORITY
+You MUST reply in the SAME language as the user's most recent message. Detect language from the user's last message and match it.
+- User writes Portuguese → you reply in Portuguese (pt-BR).
+- User writes English → you reply in English.
+- User writes Spanish → you reply in Spanish.
+This applies to: chat text, ask_user question text, ask_user option labels and descriptions, and ALL human-readable text you produce. It does NOT apply to code or file contents.
+Example: if the user wrote "Quero melhorar meu jogo da velha", reply STARTS in Portuguese — never "What would you like..." Always "O que você gostaria..." or similar.`;
+}
+function buildEnvironmentSection(options) {
+  const parts = [];
+  if (options.projectPath) {
+    parts.push(`PROJECT ROOT: ${options.projectPath}`);
+  }
+  if (options.fileTree) {
+    parts.push(`
+Current project files:
+${options.fileTree}`);
+  }
+  return parts.length > 0 ? `# Environment
+${parts.join("\n")}` : "";
+}
+function buildBehaviorSection(_mode) {
+  const rules = [
+    "The Environment section above lists the current project files and, for small projects, their contents. ALWAYS consult it first — a project may already exist even if this chat is new. Do NOT create files that already appear in the file tree; read and edit them instead",
+    "Before editing a file, ALWAYS read it first with read_file to understand its content and context. Read each file AT MOST ONCE per turn — if read_file returns a 'File unchanged since last read' stub, STOP re-reading and proceed with the earlier content",
+    "EXECUTE the user's request — do not merely inspect and summarize. If the user asks to improve, beautify, refactor, add, or change something, you MUST produce the corresponding edit_file / write_file calls. Saying 'no changes performed' when the user asked for changes is a FAILURE",
+    "When the user requests aesthetic improvements ('mais bonito', 'prettier', 'improve style', 'melhorar'), DO NOT ask 'what would you like'. Instead make CONCRETE OPINIONATED CHANGES: pick a modern color palette, add box-shadow, rounded corners, smooth hover/transition, better typography (system-ui or Inter), spacing, and apply them via edit_file. Then briefly summarize what you changed",
+    "Don't ask vague open-ended questions like 'what would you like me to work on'. The user already told you in their last message — re-read it and act. Use ask_user only for genuine forks where 2 distinct approaches both make sense",
+    "When extracting old_content for edit_file, COPY ONLY the file content — read_file shows lines as '<spaces><number>\\t<content>'. The '<spaces><number>\\t' part is METADATA shown by the tool. Strip it. old_content must contain ONLY what is actually in the file",
+    "Do NOT use placeholder text like 'Option1', 'Option2', 'TODO' in ask_user options or anywhere else. If you don't know what to ask, don't call ask_user — just proceed or describe the choice in plain text",
+    "NEVER emit special control tokens like '<|channel|>', '<|message|>', or '<|end|>' in your reply. Reply with normal prose and tool calls only",
+    "Do not create files unless they are necessary. Prefer editing existing files over creating new ones",
+    'Choose descriptive file names based on content — for a snake game use "snake-game.html", not "index.html" or "game.html"',
+    "For multi-file projects, ensure all cross-file references are correct (CSS links, JS imports, etc.)",
+    'Write COMPLETE, functional code — never use placeholders like "// TODO", "// ...", or "// add code here"',
+    "Follow the coding style that already exists in the project (indentation, naming conventions, patterns)",
+    "When asked to create something new, use write_file — do NOT just show code in your response",
+    "After completing tool operations, provide a clear summary of what was accomplished",
+    "Be careful not to introduce security vulnerabilities"
+  ];
+  rules.push("When you receive tool results, continue working or summarize results — do NOT repeat the tool call");
+  rules.push('Every tool argument must be sent as the exact JSON type the schema declares. String fields are JSON strings (e.g. "hello\\nworld"). NEVER send arrays or objects where a string is expected');
+  rules.push("If a tool returns an error, read the message carefully and retry with corrected arguments on the next turn. NEVER repeat the exact same failing call");
+  rules.push('For edit_file: pass old_content as the EXACT text from read_file output (omit the "N<tab>" line-number prefix), including indentation and whitespace');
+  rules.push("ask_user requires 1-4 questions; each question needs 1-4 options. 2-4 options is ideal; 1 is OK for simple confirmations");
+  return `# Rules
+
+${rules.map((r) => `- ${r}`).join("\n")}`;
+}
+function buildOpenAIToolExamplesSection() {
+  return `# Tool Usage Examples
+
+read_file({"path": "src/index.ts"})
+read_file({"path": "logs/huge.log", "offset": 0, "limit": 500})
+
+write_file({"path": "src/new-file.ts", "content": "export const x = 1;\\n"})
+
+edit_file({"path": "src/a.ts", "old_content": "const x = 1", "new_content": "const x = 2"})
+edit_file({"path": "src/a.ts", "old_content": "foo", "new_content": "bar", "replace_all": true})
+edit_file({"path": "README.md", "start_line": 10, "end_line": 12, "content": "## Title\\nBody."})
+
+glob({"pattern": "**/*.ts"})
+grep({"pattern": "TODO", "include": "**/*.ts"})
+
+ask_user({"questions": [{"question": "Which approach?", "header": "Approach", "options": [{"label": "REST"}, {"label": "GraphQL"}]}]})
+ask_user({"questions": [{"question": "Proceed?", "options": [{"label": "Yes"}, {"label": "No"}]}]})
+
+todo_write({"todos": [{"content": "Read script.js", "status": "in_progress"}, {"content": "Add AI logic", "status": "pending"}]})`;
+}
+function truncatePrompt(prompt, maxChars) {
+  if (prompt.length <= maxChars) return prompt;
+  const envHeader = "# Environment\n";
+  const envIdx = prompt.indexOf(envHeader);
+  if (envIdx !== -1) {
+    const nextSectionIdx = prompt.indexOf("\n# ", envIdx + envHeader.length);
+    if (nextSectionIdx !== -1) {
+      const envSection = prompt.slice(envIdx, nextSectionIdx);
+      const excess = prompt.length - maxChars;
+      if (envSection.length > excess + 200) {
+        const truncatedEnv = envSection.slice(0, envSection.length - excess - 50) + "\n... (project context truncated to fit model budget)\n";
+        return prompt.slice(0, envIdx) + truncatedEnv + prompt.slice(nextSectionIdx);
+      }
+    }
+  }
+  return prompt.slice(0, maxChars - 50) + "\n... (truncated)";
+}
+function buildSystemPrompt(options) {
+  const sections = [
+    buildIdentitySection(),
+    buildEnvironmentSection(options),
+    buildBehaviorSection(),
+    buildOpenAIToolExamplesSection()
+  ].filter(Boolean);
+  const prompt = sections.join("\n\n");
+  return truncatePrompt(prompt, MAX_SYSTEM_PROMPT_CHARS);
 }
 function buildTool(partial) {
   const isReadOnly = partial.isReadOnly ?? false;
@@ -1423,7 +892,79 @@ function resolveSafe(projectPath, relativePath) {
   }
   return resolved;
 }
+const fileStateMap = /* @__PURE__ */ new Map();
+function recordFileRead(absolutePath, content, mtimeMs) {
+  fileStateMap.set(absolutePath, { content, timestamp: mtimeMs });
+}
+function getFileState(absolutePath) {
+  return fileStateMap.get(absolutePath);
+}
+function updateFileState(absolutePath, content, mtimeMs) {
+  fileStateMap.set(absolutePath, { content, timestamp: mtimeMs });
+}
+function clearFileState() {
+  fileStateMap.clear();
+}
+function toStringValue(v) {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) return v.map((x) => String(x)).join("\n");
+  if (v && typeof v === "object") {
+    const obj = v;
+    if (typeof obj.text === "string") return obj.text;
+    if (typeof obj.content === "string") return obj.content;
+    if (typeof obj.value === "string") return obj.value;
+  }
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return v;
+}
+function coerceString(schema) {
+  return z.preprocess(toStringValue, schema);
+}
+function toBooleanValue(v) {
+  if (typeof v === "boolean") return v;
+  if (typeof v === "number") {
+    if (v === 1) return true;
+    if (v === 0) return false;
+  }
+  if (typeof v === "string") {
+    const s = v.trim().toLowerCase();
+    if (s === "true" || s === "yes" || s === "y" || s === "1" || s === "on") return true;
+    if (s === "false" || s === "no" || s === "n" || s === "0" || s === "off") return false;
+  }
+  return v;
+}
+function coerceBoolean(schema) {
+  return z.preprocess(toBooleanValue, schema);
+}
+function toNumberValue(v) {
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return v;
+}
+function coerceNumber(schema) {
+  return z.preprocess(toNumberValue, schema);
+}
+const servedReads = /* @__PURE__ */ new Map();
+function clearReadDedup() {
+  servedReads.clear();
+}
 const MAX_READ_CHARS = 5e4;
+const MAX_FILE_SIZE$2 = 1048576;
+const BLOCKED_PATHS = [
+  "/dev/zero",
+  "/dev/random",
+  "/dev/urandom",
+  "/dev/stdin",
+  "/dev/null",
+  "/dev/fd/",
+  "/proc/self/fd/"
+];
+function isBlockedPath(path) {
+  return BLOCKED_PATHS.some((bp) => path.startsWith(bp));
+}
 const ReadFileTool = buildTool({
   name: "read_file",
   description: `Read file contents with line numbers (cat -n format).
@@ -1431,15 +972,45 @@ const ReadFileTool = buildTool({
 - Use offset and limit for targeted reads of large files
 - You MUST read a file before editing it`,
   inputSchema: z.object({
-    path: z.string().min(1).describe("File path relative to the project root"),
-    offset: z.number().int().positive().optional().describe("Line number to start reading from (1-based)"),
-    limit: z.number().int().positive().optional().describe("Maximum number of lines to return")
+    path: coerceString(z.string().min(1)).describe("File path relative to the project root"),
+    offset: coerceNumber(z.number().int().positive().optional()).describe("Line number to start reading from (1-based)"),
+    limit: coerceNumber(z.number().int().positive().optional()).describe("Maximum number of lines to return")
   }),
   isReadOnly: true,
   isConcurrencySafe: true,
   call: async (input, ctx) => {
     const resolved = resolveSafe(ctx.projectPath, input.path);
+    if (isBlockedPath(resolved)) {
+      return { success: false, output: `Blocked: ${input.path} is a device/special path that cannot be read.` };
+    }
+    let fileStat;
+    try {
+      fileStat = await stat(resolved);
+    } catch {
+      return { success: false, output: `File not found: ${input.path}` };
+    }
+    if (!fileStat.isFile()) {
+      return { success: false, output: `${input.path} is not a file. Use list_files for directories.` };
+    }
+    if (fileStat.size > MAX_FILE_SIZE$2) {
+      return {
+        success: false,
+        output: `File too large: ${input.path} is ${(fileStat.size / 1024 / 1024).toFixed(1)} MB. Maximum is 1 MB. Use offset/limit to read specific sections.`
+      };
+    }
+    const dedupKey = `${resolved}::${input.offset ?? 0}::${input.limit ?? 0}`;
+    const prev = servedReads.get(dedupKey);
+    const cached = getFileState(resolved);
+    if (prev && prev.mtimeMs === fileStat.mtimeMs && cached && cached.timestamp === fileStat.mtimeMs) {
+      return {
+        success: false,
+        output: `STOP RE-READING. File '${input.path}' was already read in this conversation and has not changed. The content is in the earlier read_file tool_result above — scroll up and use it. Do NOT call read_file on this path again. Your next action MUST be either edit_file/write_file (to apply changes), another tool on a DIFFERENT path, or a final text answer to the user. Calling read_file again will fail.`,
+        metadata: { dedup: true, totalLines: cached.content.split("\n").length }
+      };
+    }
     const raw = await readFile(resolved, "utf-8");
+    recordFileRead(resolved, raw, fileStat.mtimeMs);
+    servedReads.set(dedupKey, { mtimeMs: fileStat.mtimeMs, offset: input.offset, limit: input.limit });
     const allLines = raw.split("\n");
     const totalLines = allLines.length;
     const startLine = (input.offset ?? 1) - 1;
@@ -1473,15 +1044,16 @@ const WriteFileTool = buildTool({
   description: `Create a new file or completely overwrite an existing one.
 - Creates parent directories automatically if needed
 - For existing files, prefer edit_file instead — it only changes what's needed
+- You MUST read existing files with read_file before overwriting them
 - Choose descriptive file names based on the content (e.g. snake-game.html, not index.html)
 - NEVER create documentation files (*.md) or README files unless explicitly requested`,
   inputSchema: z.object({
-    path: z.string().min(1).describe("File path relative to the project root"),
-    content: z.string().describe("The content to write to the file")
+    path: coerceString(z.string().min(1)).describe("File path relative to the project root"),
+    content: coerceString(z.string()).describe("The content to write to the file (a single JSON string; use \\n for newlines)")
   }),
   isReadOnly: false,
   isConcurrencySafe: false,
-  validateInput: (input) => {
+  validateInput: (input, ctx) => {
     if (input.content.length > MAX_FILE_SIZE$1) {
       return { valid: false, error: `File content exceeds ${MAX_FILE_SIZE$1} bytes limit` };
     }
@@ -1489,17 +1061,93 @@ const WriteFileTool = buildTool({
   },
   call: async (input, ctx) => {
     const resolved = resolveSafe(ctx.projectPath, input.path);
+    let fileExists = false;
+    try {
+      await access(resolved);
+      fileExists = true;
+    } catch {
+    }
+    if (fileExists) {
+      const fileState = getFileState(resolved);
+      if (!fileState) {
+        return {
+          success: false,
+          output: "File already exists but has not been read yet. Use read_file first to see current content, or use edit_file for targeted changes. This prevents accidental overwrites."
+        };
+      }
+      try {
+        const currentStat = await stat(resolved);
+        if (currentStat.mtimeMs > fileState.timestamp + 1e3) {
+          return {
+            success: false,
+            output: "File was modified since last read (possibly by an external process). Use read_file to see the current content before overwriting."
+          };
+        }
+      } catch {
+      }
+    }
     const parentDir = resolve(resolved, "..");
     await mkdir(parentDir, { recursive: true });
     await writeFile(resolved, input.content, "utf-8");
+    const newStat = await stat(resolved);
+    updateFileState(resolved, input.content, newStat.mtimeMs);
+    const action = fileExists ? "overwritten" : "created";
     return {
       success: true,
-      output: `File created: ${input.path} (${input.content.length} chars)`,
+      output: `File ${action}: ${input.path} (${input.content.length} chars)`,
       metadata: { chars: input.content.length }
     };
   }
 });
 const MAX_FILE_SIZE = 1048576;
+function normalizeQuotes(s) {
+  return s.replace(/[\u2018\u2019\u201A\u201B]/g, "'").replace(/[\u201C\u201D\u201E\u201F]/g, '"');
+}
+function stripLineNumberPrefix(s) {
+  const lines = s.split("\n");
+  if (lines.length === 0) return s;
+  const prefixed = lines.filter((l) => /^\s*\d+\t/.test(l)).length;
+  if (prefixed >= Math.max(1, Math.ceil(lines.length / 2))) {
+    return lines.map((l) => l.replace(/^\s*\d+\t/, "")).join("\n");
+  }
+  return s;
+}
+function findActualString(content, searchString) {
+  if (content.includes(searchString)) {
+    return searchString;
+  }
+  const dePrefixed = stripLineNumberPrefix(searchString);
+  if (dePrefixed !== searchString && content.includes(dePrefixed)) {
+    return dePrefixed;
+  }
+  const normalizedContent = normalizeQuotes(content);
+  const normalizedSearch = normalizeQuotes(searchString);
+  if (normalizedContent.includes(normalizedSearch)) {
+    const idx = normalizedContent.indexOf(normalizedSearch);
+    return content.slice(idx, idx + normalizedSearch.length);
+  }
+  const originalLines = content.split("\n");
+  const searchLinesTrimmed = searchString.split("\n").map((l) => l.trimEnd());
+  const window = searchLinesTrimmed.length;
+  if (window > 0 && window <= originalLines.length) {
+    outer: for (let i = 0; i <= originalLines.length - window; i++) {
+      for (let k = 0; k < window; k++) {
+        if (originalLines[i + k].trimEnd() !== searchLinesTrimmed[k]) continue outer;
+      }
+      return originalLines.slice(i, i + window).join("\n");
+    }
+  }
+  return null;
+}
+function countOccurrences(content, search) {
+  let count = 0;
+  let idx = 0;
+  while ((idx = content.indexOf(search, idx)) !== -1) {
+    count++;
+    idx += 1;
+  }
+  return count;
+}
 const EditFileTool = buildTool({
   name: "edit_file",
   description: `Perform exact string replacements in a file. Two modes available:
@@ -1515,19 +1163,19 @@ Mode 2 — Line range replace:
 
 IMPORTANT: You MUST read the file with read_file before editing it.`,
   inputSchema: z.object({
-    path: z.string().min(1).describe("File path relative to the project root"),
+    path: coerceString(z.string().min(1)).describe("File path relative to the project root"),
     // Mode 1: string replace
-    old_content: z.string().optional().describe("Exact text to find and replace"),
-    new_content: z.string().optional().describe("Replacement text"),
-    replace_all: z.boolean().optional().describe("Replace all occurrences (default false)"),
+    old_content: coerceString(z.string()).optional().describe("Exact text to find and replace (verbatim, no line-number prefix)"),
+    new_content: coerceString(z.string()).optional().describe("Replacement text"),
+    replace_all: coerceBoolean(z.boolean().optional()).describe("Replace all occurrences (default false)"),
     // Mode 2: line range
-    start_line: z.number().int().positive().optional().describe("Start line number (1-based) for line-range replacement"),
-    end_line: z.number().int().positive().optional().describe("End line number (inclusive) for line-range replacement"),
-    content: z.string().optional().describe("New content to replace the line range with")
+    start_line: coerceNumber(z.number().int().positive().optional()).describe("Start line number (1-based) for line-range replacement"),
+    end_line: coerceNumber(z.number().int().positive().optional()).describe("End line number (inclusive) for line-range replacement"),
+    content: coerceString(z.string()).optional().describe("New content to replace the line range with")
   }),
   isReadOnly: false,
   isConcurrencySafe: false,
-  validateInput: (input) => {
+  validateInput: (input, ctx) => {
     const hasStringMode = input.old_content !== void 0;
     const hasLineMode = input.start_line !== void 0 && input.end_line !== void 0;
     if (!hasStringMode && !hasLineMode) {
@@ -1545,33 +1193,77 @@ IMPORTANT: You MUST read the file with read_file before editing it.`,
     if (hasLineMode && input.start_line > input.end_line) {
       return { valid: false, error: "start_line must be <= end_line." };
     }
+    if (hasStringMode && input.old_content === input.new_content) {
+      return { valid: false, error: "old_content and new_content are identical. No changes needed." };
+    }
+    const resolved = resolveSafe(ctx.projectPath, input.path);
+    const fileState = getFileState(resolved);
+    if (!fileState) {
+      return {
+        valid: false,
+        error: "File has not been read yet. Use read_file first before editing. This ensures you see the current content and prevents accidental overwrites."
+      };
+    }
     return { valid: true };
   },
   call: async (input, ctx) => {
     const resolved = resolveSafe(ctx.projectPath, input.path);
+    const fileState = getFileState(resolved);
+    if (fileState) {
+      try {
+        const currentStat = await stat(resolved);
+        if (currentStat.mtimeMs > fileState.timestamp + 1e3) {
+          return {
+            success: false,
+            output: "File was modified since last read (possibly by an external process or a previous edit). Use read_file to see the current content before editing."
+          };
+        }
+      } catch {
+      }
+    }
     const current = await readFile(resolved, "utf-8");
     let updated;
     if (input.old_content !== void 0) {
       const oldContent = input.old_content;
       const newContent = input.new_content;
-      if (!current.includes(oldContent)) {
+      const actualString = findActualString(current, oldContent);
+      if (!actualString) {
+        const firstLine = oldContent.split("\n")[0]?.slice(0, 60) ?? "";
+        let hint = "";
+        if (firstLine) {
+          for (let n = Math.min(firstLine.length, 30); n >= 8; n -= 4) {
+            const probe = firstLine.slice(0, n).trim();
+            if (!probe) break;
+            const idx = current.indexOf(probe);
+            if (idx >= 0) {
+              const start = Math.max(0, idx - 40);
+              const end = Math.min(current.length, idx + probe.length + 80);
+              hint = `
+A partial match was found. Actual text in file near that location:
+---
+${current.slice(start, end)}
+---
+Copy from here verbatim (no line-number prefix).`;
+              break;
+            }
+          }
+        }
         return {
           success: false,
-          output: "old_content not found in file. Make sure you use the exact text including whitespace and indentation. Use read_file first to see the current content."
+          output: `old_content not found in file '${input.path}'. Common causes: (1) you copied the line-number prefix '\\d+\\t' from read_file — remove it; (2) whitespace/indentation differs; (3) you paraphrased instead of copying. Re-read the file and copy the exact characters, OR use line-range mode (start_line/end_line/content).` + hint
         };
       }
       if (input.replace_all) {
-        updated = current.split(oldContent).join(newContent);
+        updated = current.split(actualString).join(newContent);
       } else {
-        const firstIdx = current.indexOf(oldContent);
-        const secondIdx = current.indexOf(oldContent, firstIdx + 1);
-        if (secondIdx !== -1) {
+        const occurrences = countOccurrences(current, actualString);
+        if (occurrences > 1) {
           return {
             success: false,
-            output: "old_content appears more than once in the file. Provide more surrounding context to make it unique, or set replace_all: true."
+            output: `Found ${occurrences} occurrences of old_content in the file. Include more surrounding context to uniquely identify the target, or set replace_all: true to replace all occurrences.`
           };
         }
-        updated = current.replace(oldContent, newContent);
+        updated = current.replace(actualString, newContent);
       }
     } else {
       const lines = current.split("\n");
@@ -1591,6 +1283,8 @@ IMPORTANT: You MUST read the file with read_file before editing it.`,
       return { success: false, output: `Resulting file exceeds ${MAX_FILE_SIZE} bytes limit.` };
     }
     await writeFile(resolved, updated, "utf-8");
+    const newStat = await stat(resolved);
+    updateFileState(resolved, updated, newStat.mtimeMs);
     return {
       success: true,
       output: `File edited: ${input.path}`
@@ -1665,22 +1359,37 @@ Returns matching file paths sorted by modification time (most recently modified 
   isConcurrencySafe: true,
   call: async (input, ctx) => {
     const searchDir = input.path ? resolveSafe(ctx.projectPath, input.path) : ctx.projectPath;
+    try {
+      const dirStat = await stat(searchDir);
+      if (!dirStat.isDirectory()) {
+        return { success: false, output: `${input.path || "."} is not a directory.` };
+      }
+    } catch {
+      return { success: false, output: `Directory not found: ${input.path || "."}` };
+    }
     const entries = [];
     await collectFiles(searchDir, ctx.projectPath, 0, entries);
-    const matched = entries.filter((e) => minimatch(e.relativePath, input.pattern, { dot: false })).sort((a, b) => b.mtime - a.mtime).slice(0, MAX_RESULTS$1);
+    const allMatched = entries.filter((e) => minimatch(e.relativePath, input.pattern, { dot: false })).sort((a, b) => b.mtime - a.mtime);
+    const truncated = allMatched.length > MAX_RESULTS$1;
+    const matched = allMatched.slice(0, MAX_RESULTS$1);
     if (matched.length === 0) {
       return { success: true, output: "No files matched the pattern." };
     }
-    const output = matched.map((e) => e.relativePath).join("\n");
+    let output = matched.map((e) => e.relativePath).join("\n");
+    if (truncated) {
+      output += `
+... (truncated: showing ${MAX_RESULTS$1} of ${allMatched.length} matches)`;
+    }
     return {
       success: true,
       output,
-      metadata: { matchCount: matched.length }
+      metadata: { matchCount: matched.length, totalMatches: allMatched.length, truncated }
     };
   }
 });
 const MAX_RESULTS = 100;
 const MAX_LINE_LENGTH = 2e3;
+const MAX_COLUMNS = 500;
 const EXCLUDED_DIRS = [
   "node_modules",
   ".git",
@@ -1695,15 +1404,20 @@ const EXCLUDED_DIRS = [
 const GrepTool = buildTool({
   name: "grep",
   description: `Search for a regex pattern in file contents using ripgrep.
-- Returns matching lines with file paths and line numbers
-- Use include to filter by file type (e.g. "*.ts", "*.{ts,tsx}")
-- Supports full regex syntax
-- Searches hidden files by default
-- Use this tool instead of bash + grep for better performance`,
+- Default mode "files_with_matches" returns only file paths (most token-efficient)
+- Use output_mode "content" for matching lines with file paths and line numbers
+- Use output_mode "count" for match counts per file
+- Use context (-A, -B, -C) to show surrounding lines (only with output_mode "content")
+- Use case_insensitive for case-insensitive matching
+- Use include to filter by file pattern (e.g. "*.ts", "*.{ts,tsx}")
+- Supports full regex syntax`,
   inputSchema: z.object({
     pattern: z.string().min(1).describe("Regex pattern to search for"),
     path: z.string().optional().describe("Directory to search in (defaults to project root)"),
-    include: z.string().optional().describe("File pattern filter (e.g. '*.ts', '*.{html,css}')")
+    include: z.string().optional().describe("File pattern filter (e.g. '*.ts', '*.{html,css}')"),
+    output_mode: z.enum(["content", "files_with_matches", "count"]).optional().describe("Output mode: 'files_with_matches' (default, just paths), 'content' (matching lines), 'count' (match counts)"),
+    case_insensitive: z.boolean().optional().describe("Case insensitive search"),
+    context: z.number().int().nonnegative().optional().describe("Lines of context before and after each match (requires output_mode 'content')")
   }),
   isReadOnly: true,
   isConcurrencySafe: true,
@@ -1731,25 +1445,50 @@ async function hasRipgrep() {
     });
   });
 }
-async function runRipgrep(input, searchDir, ctx) {
-  const args = [
-    "-n",
-    // line numbers
-    "-H",
-    // show filenames
+function buildRipgrepArgs(input, searchDir) {
+  const mode = input.output_mode ?? "files_with_matches";
+  const args = [];
+  switch (mode) {
+    case "files_with_matches":
+      args.push("--files-with-matches");
+      break;
+    case "count":
+      args.push("--count");
+      break;
+    case "content":
+    default:
+      args.push("-n", "-H");
+      if (input.context && input.context > 0) {
+        args.push("-C", String(input.context));
+      }
+      break;
+  }
+  args.push(
     "--hidden",
-    // include hidden files
     "--no-messages",
-    // suppress error messages
-    "--color=never"
-  ];
+    "--color=never",
+    `--max-columns=${MAX_COLUMNS}`
+    // prevent base64/minified lines from flooding output
+  );
+  if (input.case_insensitive) {
+    args.push("-i");
+  }
   if (input.include) {
     args.push("--glob", input.include);
   }
   for (const dir of EXCLUDED_DIRS) {
     args.push("--glob", `!${dir}`);
   }
-  args.push(input.pattern, searchDir);
+  if (input.pattern.startsWith("-")) {
+    args.push("-e", input.pattern);
+  } else {
+    args.push(input.pattern);
+  }
+  args.push(searchDir);
+  return args;
+}
+async function runRipgrep(input, searchDir, ctx) {
+  const args = buildRipgrepArgs(input, searchDir);
   return new Promise((resolve2) => {
     let output = "";
     const proc = spawn("rg", args, { stdio: ["ignore", "pipe", "pipe"] });
@@ -1786,13 +1525,24 @@ async function runRipgrep(input, searchDir, ctx) {
 }
 async function runNativeGrep(input, searchDir, ctx) {
   const args = ["-rn", "--color=never"];
+  if (input.case_insensitive) {
+    args.push("-i");
+  }
   if (input.include) {
     args.push(`--include=${input.include}`);
   }
   for (const dir of EXCLUDED_DIRS) {
     args.push(`--exclude-dir=${dir}`);
   }
-  args.push(input.pattern, searchDir);
+  if (input.context && input.context > 0) {
+    args.push(`-C${input.context}`);
+  }
+  if (input.pattern.startsWith("-")) {
+    args.push("-e", input.pattern);
+  } else {
+    args.push(input.pattern);
+  }
+  args.push(searchDir);
   return new Promise((resolve2) => {
     let output = "";
     const proc = spawn("grep", args, { stdio: ["ignore", "pipe", "pipe"] });
@@ -2032,6 +1782,176 @@ const BashTool = buildTool({
     });
   }
 });
+const optionSchema = z.object({
+  label: z.string().min(1).max(80).describe("Display text (1-5 words). Concise and descriptive."),
+  description: z.string().max(200).optional().describe("Short explanation of the trade-off or implication. Optional.")
+});
+const questionSchema = z.object({
+  question: z.string().min(1).describe("The full question, ending with '?'. Clear and specific."),
+  header: z.string().max(12).optional().describe("Very short chip label (max 12 chars), e.g. 'Library', 'Auth'."),
+  options: z.array(optionSchema).min(1).max(4).describe("1-4 choices. Ideally 2-4; 1 is allowed for confirmation."),
+  multiSelect: coerceBoolean(z.boolean().default(false)).describe("true = user can pick multiple.")
+});
+function normalizeToRich(v) {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return v;
+  const obj = v;
+  if (Array.isArray(obj.questions)) return v;
+  if (typeof obj.question === "string") {
+    const rawOptions = obj.options;
+    let options = [];
+    if (Array.isArray(rawOptions)) {
+      options = rawOptions.map((opt) => {
+        if (typeof opt === "string") return { label: opt };
+        if (opt && typeof opt === "object") {
+          const o = opt;
+          return {
+            label: typeof o.label === "string" ? o.label : String(o.label ?? o.value ?? ""),
+            description: typeof o.description === "string" ? o.description : void 0
+          };
+        }
+        return { label: String(opt) };
+      });
+    } else if (typeof rawOptions === "string") {
+      options = [{ label: rawOptions }];
+    }
+    if (options.length === 0) {
+      options = [{ label: "Yes" }, { label: "No" }];
+    }
+    return {
+      questions: [
+        {
+          question: obj.question,
+          header: typeof obj.header === "string" ? obj.header : void 0,
+          options,
+          multiSelect: obj.multiSelect ?? false
+        }
+      ]
+    };
+  }
+  return v;
+}
+const AskUserTool = buildTool({
+  name: "ask_user",
+  description: `Ask the user a question (or up to 4 related questions) when you need clarification, a decision, or a preference.
+
+WHEN TO USE:
+- Instructions are ambiguous and you need to clarify before proceeding
+- You need the user to choose between distinct approaches
+- You need a preference that wasn't specified
+- You want to confirm before a significant change
+
+WHEN NOT TO USE:
+- Questions you can answer yourself by reading the code
+- Trivial confirmations (use your best judgment)
+
+AFTER CALLING: include the question in your response and STOP making tool calls. Wait for the user's answer in their next message.
+
+SHAPE:
+  { questions: [ { question, header?, options: [{label, description?}], multiSelect? } ] }
+- 1 to 4 questions per call.
+- Each question: 1 to 4 options. 2-4 is ideal; 1 is OK for a simple "proceed?".
+- Option labels should be 1-5 words. Add short description when the trade-off isn't obvious.
+- Legacy shape {question, options: string[]} is still accepted.`,
+  inputSchema: z.preprocess(
+    normalizeToRich,
+    z.object({
+      questions: z.array(questionSchema).min(1).max(4).describe("1-4 questions to ask the user")
+    })
+  ),
+  isReadOnly: true,
+  isConcurrencySafe: false,
+  call: async (input, ctx) => {
+    const parsed = input;
+    const blocks = parsed.questions.map((q, qi) => {
+      const headerChip = q.header ? `[${q.header}] ` : "";
+      const optsText = q.options.map((o, oi) => {
+        const desc = o.description ? ` — ${o.description}` : "";
+        return `  ${oi + 1}. ${o.label}${desc}`;
+      }).join("\n");
+      const multi = q.multiSelect ? " (multi-select)" : "";
+      return `Q${parsed.questions.length > 1 ? qi + 1 : ""}: ${headerChip}${q.question}${multi}
+${optsText}`;
+    });
+    const summary = blocks.join("\n\n");
+    ctx.onActivity({
+      kind: "ask_user",
+      tool: "ask_user",
+      summary: `Question for user:
+${summary}`,
+      data: { questions: parsed.questions }
+    });
+    return {
+      success: true,
+      output: `Questions sent to user:
+${summary}
+
+IMPORTANT: Include the question(s) in your text response and STOP making tool calls. Wait for the user's reply.`
+    };
+  }
+});
+let currentTodos = [];
+function clearTodos() {
+  currentTodos = [];
+}
+const TodoWriteTool = buildTool({
+  name: "todo_write",
+  description: `Create or update a structured task list to track your progress on complex work.
+
+Use this tool when:
+- Working on a multi-step task (3+ steps)
+- You need to organize and track progress on complex work
+- The user provides multiple things to do
+- You want to show the user what you're working on
+
+How to use:
+- Write the FULL todo list each time (not incremental updates)
+- Mark exactly ONE task as "in_progress" at a time
+- Mark tasks as "completed" immediately after finishing them
+- Use imperative form for content (e.g., "Fix authentication bug")
+
+Do NOT use for:
+- Single, simple tasks
+- Trivial tasks completable in <3 steps
+- Purely conversational responses`,
+  inputSchema: z.object({
+    todos: z.array(z.object({
+      content: z.string().min(1).describe("Task description in imperative form (e.g., 'Fix the login bug')"),
+      status: z.enum(["pending", "in_progress", "completed"]).describe("Task status")
+    })).min(1).describe("The complete todo list (replaces the previous list)")
+  }),
+  isReadOnly: true,
+  // doesn't modify filesystem
+  isConcurrencySafe: false,
+  validateInput: (input) => {
+    const inProgress = input.todos.filter((t) => t.status === "in_progress");
+    if (inProgress.length > 1) {
+      return { valid: false, error: "Only one task can be in_progress at a time." };
+    }
+    return { valid: true };
+  },
+  call: async (input, ctx) => {
+    [...currentTodos];
+    const allDone = input.todos.every((t) => t.status === "completed");
+    currentTodos = allDone ? [] : input.todos;
+    const summary = input.todos.map((t) => {
+      const icon = t.status === "completed" ? "[x]" : t.status === "in_progress" ? "[>]" : "[ ]";
+      return `${icon} ${t.content}`;
+    }).join("\n");
+    ctx.onActivity({
+      kind: "info",
+      summary: `Todo list:
+${summary}`
+    });
+    const completed = input.todos.filter((t) => t.status === "completed").length;
+    const pending = input.todos.filter((t) => t.status === "pending").length;
+    const inProgress = input.todos.filter((t) => t.status === "in_progress").length;
+    return {
+      success: true,
+      output: `Todo list updated: ${completed} completed, ${inProgress} in progress, ${pending} pending.${allDone ? " All tasks completed — list cleared." : ""}`,
+      metadata: { total: input.todos.length, completed, inProgress, pending }
+    };
+  }
+});
 const TOOL_REGISTRY = [
   ReadFileTool,
   WriteFileTool,
@@ -2042,354 +1962,32 @@ const TOOL_REGISTRY = [
   ListFilesTool,
   RenameFileTool,
   CreateDirectoryTool,
-  BashTool
+  BashTool,
+  AskUserTool,
+  TodoWriteTool
 ];
 function findToolByName(name) {
   return TOOL_REGISTRY.find((t) => t.name === name);
 }
-function generateToolDocs() {
-  return TOOL_REGISTRY.map((tool) => {
-    const schema = tool.inputSchema;
-    let argsDoc = "";
-    if ("shape" in schema && schema.shape) {
-      const shape = schema.shape;
-      argsDoc = Object.entries(shape).map(([key, val]) => {
-        const isOptional = val.isOptional?.() ?? false;
-        const desc = val._def?.description ?? val.description ?? "";
-        return `  - ${key}${isOptional ? " (optional)" : " (required)"}: ${desc}`;
-      }).join("\n");
-    }
-    return `## ${tool.name}
-${tool.description}
-${argsDoc ? `Args:
-${argsDoc}` : ""}`;
-  }).join("\n\n");
-}
 const index = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   TOOL_REGISTRY,
-  findToolByName,
-  generateToolDocs
+  findToolByName
 }, Symbol.toStringTag, { value: "Module" }));
-const VARIANTS = {
-  gemma: {
-    toolFormatRepetitions: 1,
-    includeExample: true,
-    maxSystemPromptChars: 6e3,
-    extraInstructions: "Be direct and concise. Respond in the user's language."
-  },
-  llama: {
-    toolFormatRepetitions: 1,
-    includeExample: true,
-    maxSystemPromptChars: 8e3
-  },
-  qwen: {
-    toolFormatRepetitions: 0,
-    includeExample: true,
-    maxSystemPromptChars: 8e3
-  },
-  mistral: {
-    toolFormatRepetitions: 1,
-    includeExample: true,
-    maxSystemPromptChars: 8e3
-  },
-  codestral: {
-    toolFormatRepetitions: 0,
-    includeExample: true,
-    maxSystemPromptChars: 1e4
-  },
-  deepseek: {
-    toolFormatRepetitions: 0,
-    includeExample: true,
-    maxSystemPromptChars: 1e4
-  },
-  phi: {
-    toolFormatRepetitions: 2,
-    includeExample: true,
-    maxSystemPromptChars: 4e3
-  }
-};
-const DEFAULT_VARIANT = {
-  toolFormatRepetitions: 1,
-  includeExample: true,
-  maxSystemPromptChars: 8e3
-};
-function getPromptVariant(modelId) {
-  const lower = modelId.toLowerCase();
-  for (const [key, variant] of Object.entries(VARIANTS)) {
-    if (lower.includes(key)) {
-      return variant;
+function zodToOpenAITool(tool) {
+  const jsonSchema = z.toJSONSchema(tool.inputSchema);
+  delete jsonSchema.$schema;
+  return {
+    type: "function",
+    function: {
+      name: tool.name,
+      description: tool.description,
+      parameters: jsonSchema
     }
-  }
-  return DEFAULT_VARIANT;
+  };
 }
-function buildIdentitySection() {
-  return `You are a skilled software engineer working directly in the user's project. You write clean, well-structured, production-quality code. You think before you act: understand the existing codebase before making changes, and explain your reasoning.`;
-}
-function buildEnvironmentSection(options) {
-  const parts = [];
-  if (options.projectPath) {
-    parts.push(`PROJECT ROOT: ${options.projectPath}`);
-  }
-  if (options.fileTree) {
-    parts.push(`
-Current project files:
-${options.fileTree}`);
-  }
-  if (options.keyFileContents && Object.keys(options.keyFileContents).length > 0) {
-    parts.push(`
-Key project files:`);
-    for (const [filename, content] of Object.entries(options.keyFileContents)) {
-      parts.push(`
---- ${filename} ---
-${content}`);
-    }
-  }
-  return parts.length > 0 ? `# Environment
-${parts.join("\n")}` : "";
-}
-function buildBehaviorSection() {
-  return `# Rules
-
-- Before editing a file, ALWAYS read it first with read_file to understand its content and context
-- Do not create files unless they are necessary. Prefer editing existing files over creating new ones
-- Choose descriptive file names based on content — for a snake game use "snake-game.html", not "index.html" or "game.html"
-- For multi-file projects, ensure all cross-file references are correct (CSS links, JS imports, etc.)
-- Write COMPLETE, functional code — never use placeholders like "// TODO", "// ...", or "// add code here"
-- Follow the coding style that already exists in the project (indentation, naming conventions, patterns)
-- When asked to create something new, use write_file — do NOT just show code in your response
-- After completing tool operations, provide a clear summary of what was accomplished
-- Be careful not to introduce security vulnerabilities
-- When you receive a <tool_result>, continue working or summarize results — do NOT repeat the tool call`;
-}
-function buildToolFormatSection(variant) {
-  let section = `# Tool Usage
-
-To use a tool, wrap valid JSON in <tool_call> tags:
-
-<tool_call>
-{"name": "tool_name", "args": {"param1": "value1"}}
-</tool_call>
-
-IMPORTANT: Use \\n for newlines inside string values (not actual line breaks). Each tool call needs its own <tool_call> tags.`;
-  if (variant.includeExample) {
-    section += `
-
-EXAMPLE — creating a file:
-<tool_call>
-{"name": "write_file", "args": {"path": "snake-game.html", "content": "<!DOCTYPE html>\\n<html>\\n<head><title>Snake Game</title></head>\\n<body>\\n<canvas id=\\"game\\"></canvas>\\n</body>\\n</html>"}}
-</tool_call>`;
-  }
-  if (variant.toolFormatRepetitions >= 1) {
-    section += `
-
-REMINDER: Always use <tool_call> tags to create or edit files. Never just paste code in your response.`;
-  }
-  if (variant.toolFormatRepetitions >= 2) {
-    section += ` The JSON must be on a single line inside the tags.`;
-  }
-  if (variant.extraInstructions) {
-    section += `
-
-${variant.extraInstructions}`;
-  }
-  return section;
-}
-function buildToolReferenceSection() {
-  return `# Available Tools
-
-${generateToolDocs()}`;
-}
-function truncatePrompt(prompt, maxChars) {
-  if (prompt.length <= maxChars) return prompt;
-  const envHeader = "# Environment\n";
-  const envIdx = prompt.indexOf(envHeader);
-  if (envIdx !== -1) {
-    const nextSectionIdx = prompt.indexOf("\n# ", envIdx + envHeader.length);
-    if (nextSectionIdx !== -1) {
-      const envSection = prompt.slice(envIdx, nextSectionIdx);
-      const excess = prompt.length - maxChars;
-      if (envSection.length > excess + 200) {
-        const truncatedEnv = envSection.slice(0, envSection.length - excess - 50) + "\n... (project context truncated to fit model budget)\n";
-        return prompt.slice(0, envIdx) + truncatedEnv + prompt.slice(nextSectionIdx);
-      }
-    }
-  }
-  return prompt.slice(0, maxChars - 50) + "\n... (truncated)";
-}
-function buildSystemPrompt(options) {
-  const variant = getPromptVariant(options.modelId ?? "");
-  const sections = [
-    buildIdentitySection(),
-    buildEnvironmentSection(options),
-    buildBehaviorSection(),
-    buildToolFormatSection(variant),
-    buildToolReferenceSection()
-  ].filter(Boolean);
-  const prompt = sections.join("\n\n");
-  return truncatePrompt(prompt, variant.maxSystemPromptChars);
-}
-const OPEN_TAG = "<tool_call>";
-const CLOSE_TAG = "</tool_call>";
-function parseToolCallJson(raw) {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw);
-    if (typeof parsed.name === "string" && parsed.name) {
-      return { name: parsed.name, args: parsed.args ?? {} };
-    }
-  } catch {
-  }
-  try {
-    let sanitized = raw;
-    sanitized = sanitized.replace(/\r\n/g, "\\n");
-    sanitized = sanitized.replace(/\n/g, "\\n");
-    sanitized = sanitized.replace(/\t/g, "\\t");
-    sanitized = sanitized.replace(/,\s*([}\]])/g, "$1");
-    const parsed = JSON.parse(sanitized);
-    if (typeof parsed.name === "string" && parsed.name) {
-      return { name: parsed.name, args: parsed.args ?? {} };
-    }
-  } catch {
-  }
-  const nameMatch = raw.match(/"name"\s*:\s*"([^"]+)"/);
-  if (!nameMatch) return null;
-  const name = nameMatch[1];
-  const args = {};
-  const pathMatch = raw.match(/"path"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
-  if (pathMatch) args.path = pathMatch[1].replace(/\\"/g, '"');
-  const contentMatch = raw.match(/"content"\s*:\s*"([\s\S]*)"\s*\}\s*\}/);
-  if (contentMatch) {
-    let content = contentMatch[1];
-    content = content.replace(/\\n/g, "\n");
-    content = content.replace(/\\t/g, "	");
-    content = content.replace(/\\"/g, '"');
-    content = content.replace(/\\\\/g, "\\");
-    args.content = content;
-  }
-  const oldContentMatch = raw.match(/"old_content"\s*:\s*"([\s\S]*?)(?:"\s*,\s*"new_content)/);
-  if (oldContentMatch) args.old_content = oldContentMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"');
-  const newContentMatch = raw.match(/"new_content"\s*:\s*"([\s\S]*)"\s*\}\s*\}/);
-  if (newContentMatch) args.new_content = newContentMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"');
-  const commandMatch = raw.match(/"command"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
-  if (commandMatch) args.command = commandMatch[1].replace(/\\"/g, '"');
-  const patternMatch = raw.match(/"pattern"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
-  if (patternMatch) args.pattern = patternMatch[1];
-  const oldPathMatch = raw.match(/"old_path"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
-  if (oldPathMatch) args.old_path = oldPathMatch[1];
-  const newPathMatch = raw.match(/"new_path"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
-  if (newPathMatch) args.new_path = newPathMatch[1];
-  return { name, args };
-}
-class ToolCallParser {
-  state = "normal";
-  buffer = "";
-  toolBuffer = "";
-  _pendingToolCall = null;
-  /** Feed a chunk of streamed text. May return text to emit and/or a parsed tool call. */
-  feed(chunk) {
-    this.buffer += chunk;
-    const results = [];
-    while (this.buffer.length > 0) {
-      if (this.state === "normal") {
-        const openIdx = this.buffer.indexOf(OPEN_TAG);
-        if (openIdx === -1) {
-          const safe = this.safeEmitLength(this.buffer, OPEN_TAG);
-          if (safe > 0) {
-            results.push({ textToEmit: this.buffer.slice(0, safe), toolCall: null });
-            this.buffer = this.buffer.slice(safe);
-          }
-          break;
-        }
-        if (openIdx > 0) {
-          results.push({ textToEmit: this.buffer.slice(0, openIdx), toolCall: null });
-        }
-        this.buffer = this.buffer.slice(openIdx + OPEN_TAG.length);
-        this.state = "collecting";
-        this.toolBuffer = "";
-      }
-      if (this.state === "collecting") {
-        const closeIdx = this.buffer.indexOf(CLOSE_TAG);
-        const nextOpenIdx = this.buffer.indexOf(OPEN_TAG);
-        let endIdx = -1;
-        let skipLength = 0;
-        if (closeIdx !== -1 && (nextOpenIdx === -1 || closeIdx <= nextOpenIdx)) {
-          endIdx = closeIdx;
-          skipLength = CLOSE_TAG.length;
-        } else if (nextOpenIdx !== -1) {
-          endIdx = nextOpenIdx;
-          skipLength = 0;
-        }
-        if (endIdx === -1) {
-          this.toolBuffer += this.buffer;
-          this.buffer = "";
-          break;
-        }
-        this.toolBuffer += this.buffer.slice(0, endIdx);
-        this.buffer = this.buffer.slice(endIdx + skipLength);
-        this.state = "normal";
-        const toolCall = parseToolCallJson(this.toolBuffer.trim());
-        if (toolCall) {
-          results.push({ textToEmit: "", toolCall });
-        }
-        this.toolBuffer = "";
-      }
-    }
-    return results;
-  }
-  /** Flush any remaining buffered text (call at end of stream). */
-  flush() {
-    let remaining = "";
-    if (this.state === "collecting") {
-      const toolCall = parseToolCallJson(this.toolBuffer.trim());
-      if (toolCall) {
-        this._pendingToolCall = toolCall;
-        remaining = this.buffer;
-      } else {
-        remaining = this.buffer;
-      }
-    } else {
-      remaining = this.buffer;
-    }
-    this.buffer = "";
-    this.toolBuffer = "";
-    this.state = "normal";
-    return remaining;
-  }
-  /** Get any tool call found during flush that wasn't properly closed. */
-  getPendingToolCall() {
-    const tc = this._pendingToolCall;
-    this._pendingToolCall = null;
-    return tc;
-  }
-  safeEmitLength(text, tag) {
-    for (let i = 1; i < tag.length && i <= text.length; i++) {
-      if (text.endsWith(tag.slice(0, i))) {
-        return text.length - i;
-      }
-    }
-    return text.length;
-  }
-}
-function extractToolCallsFromText(text) {
-  const results = [];
-  const regex = /<tool_call>\s*([\s\S]*?)(?:<\/tool_call>|(?=<tool_call>)|$)/g;
-  let match;
-  while ((match = regex.exec(text)) !== null) {
-    const raw = match[1].trim();
-    if (!raw) continue;
-    const parsed = parseToolCallJson(raw);
-    if (parsed) {
-      results.push(parsed);
-    }
-  }
-  return results;
-}
-function stripToolCallBlocks(text) {
-  let cleaned = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, "");
-  cleaned = cleaned.replace(/<tool_call>[\s\S]*?(?=<tool_call>)/g, "");
-  cleaned = cleaned.replace(/<tool_call>[\s\S]*$/g, "");
-  return cleaned.trim();
+function buildOpenAIToolSchemas() {
+  return TOOL_REGISTRY.map(zodToOpenAITool);
 }
 async function addEntry(threadId, runId, type, content) {
   const id = randomUUID();
@@ -2438,6 +2036,89 @@ async function getLogs(threadId) {
     });
   }
   return Array.from(runMap.values());
+}
+function pathToStr(path) {
+  if (path.length === 0) return "(root)";
+  return path.map((p) => typeof p === "number" ? `[${p}]` : p).join(".");
+}
+function extractReceived(issue) {
+  if (typeof issue.received === "string") return issue.received;
+  if (typeof issue.message === "string") {
+    const m = issue.message.match(/received\s+(\w+)/i);
+    if (m) return m[1];
+  }
+  return "unknown";
+}
+function renderIssue(issue) {
+  const path = issue.path ?? [];
+  const field = pathToStr(path);
+  const code = issue.code;
+  switch (code) {
+    case "invalid_type": {
+      const exp = String(issue.expected ?? "");
+      const received = extractReceived(issue);
+      if (exp === "string" && received === "array") {
+        return `Field '${field}' must be a string. You sent an array — join the lines with \\n into a single string and retry.`;
+      }
+      if (exp === "string" && received === "object") {
+        return `Field '${field}' must be a string. You sent an object — send the raw text as a JSON string instead.`;
+      }
+      if (exp === "boolean") {
+        return `Field '${field}' must be a boolean (true or false). You sent ${received}.`;
+      }
+      if (exp === "number") {
+        return `Field '${field}' must be a number. You sent ${received}.`;
+      }
+      if (exp === "array") {
+        return `Field '${field}' must be an array. You sent ${received}.`;
+      }
+      return `Field '${field}' must be ${exp} but you sent ${received}.`;
+    }
+    case "too_small": {
+      const origin = String(issue.origin ?? "");
+      const minimum = String(issue.minimum ?? "");
+      if (origin === "array") {
+        return `Field '${field}' must have at least ${minimum} item${minimum === "1" ? "" : "s"}. ${minimum === "1" ? "Provide one value or omit the field." : `Provide ${minimum} or more items, or omit the field if optional.`}`;
+      }
+      if (origin === "string") {
+        return `Field '${field}' must be at least ${minimum} character(s) long.`;
+      }
+      if (origin === "number") {
+        return `Field '${field}' must be >= ${minimum}.`;
+      }
+      return `Field '${field}' is too small (minimum: ${minimum}).`;
+    }
+    case "too_big": {
+      const origin = String(issue.origin ?? "");
+      const maximum = String(issue.maximum ?? "");
+      if (origin === "array") {
+        return `Field '${field}' may have at most ${maximum} item(s). Remove extras and retry.`;
+      }
+      if (origin === "string") {
+        return `Field '${field}' is too long (max ${maximum} chars).`;
+      }
+      return `Field '${field}' is too big (max: ${maximum}).`;
+    }
+    case "invalid_format":
+      return `Field '${field}' has an invalid format: ${String(issue.message ?? "")}.`;
+    case "unrecognized_keys": {
+      const keys = issue.keys ?? [];
+      return `Unknown field(s) ${keys.map((k) => `'${k}'`).join(", ")}. Check the tool schema and retry without them.`;
+    }
+    case "invalid_union":
+      return `Field '${field}' doesn't match any accepted shape. ${String(issue.message ?? "")}`;
+    case "custom":
+      return `Field '${field}': ${String(issue.message ?? "")}`;
+    default:
+      return `Field '${field}': ${String(issue.message ?? code)}`;
+  }
+}
+function formatZodError(err) {
+  const issues = err.issues;
+  if (!issues || issues.length === 0) return "Invalid input (no issues reported).";
+  if (issues.length === 1) return renderIssue(issues[0]);
+  return `${issues.length} validation errors:
+` + issues.map((i, idx) => `  ${idx + 1}. ${renderIssue(i)}`).join("\n");
 }
 function describeToolCall(name, args) {
   switch (name) {
@@ -2558,9 +2239,10 @@ async function runToolUse(toolCall, ctx, onApprovalNeeded) {
   const normalizedArgs = normalizeArgs(toolCall.name, toolCall.args);
   const parseResult = tool.inputSchema.safeParse(normalizedArgs);
   if (!parseResult.success) {
-    const error = `Invalid input for ${tool.name}: ${parseResult.error.message}`;
+    const humanMsg = formatZodError(parseResult.error);
+    const error = `Invalid arguments for ${tool.name}. ${humanMsg}`;
     await logToolResult(ctx.threadId, ctx.runId, tool.name, { success: false, output: error });
-    ctx.onActivity({ kind: "tool_result", tool: tool.name, summary: `Validation error: ${error.slice(0, 100)}` });
+    ctx.onActivity({ kind: "tool_result", tool: tool.name, summary: `Validation error: ${humanMsg.slice(0, 120)}` });
     return { success: false, output: error };
   }
   const validatedInput = parseResult.data;
@@ -2659,9 +2341,19 @@ const KEY_FILES = [
   "go.mod",
   "requirements.txt",
   "composer.json",
-  "Gemfile"
+  "Gemfile",
+  "README.md",
+  "index.html",
+  "main.py",
+  "main.ts",
+  "main.js",
+  "index.ts",
+  "index.js"
 ];
-const MAX_KEY_FILE_CHARS = 4e3;
+const MAX_KEY_FILE_CHARS = 8e3;
+const SMART_INCLUDE_EXTS = /* @__PURE__ */ new Set([".html", ".css", ".js", ".ts", ".tsx", ".jsx", ".py", ".md", ".json"]);
+const MAX_SMART_INCLUDE_FILES = 6;
+const MAX_SMART_INCLUDE_CHARS_PER_FILE = 3e3;
 const IGNORE_DIRS = /* @__PURE__ */ new Set([
   "node_modules",
   ".git",
@@ -2675,18 +2367,6 @@ const IGNORE_DIRS = /* @__PURE__ */ new Set([
   ".DS_Store",
   "build"
 ]);
-function buildConversationHistory(baseHistory, systemMessages, turns) {
-  const history = [...systemMessages, ...baseHistory];
-  for (const turn of turns) {
-    if (turn.assistantText) {
-      history.push({ role: "assistant", content: turn.assistantText });
-    }
-    if (turn.toolResults) {
-      history.push({ role: "user", content: turn.toolResults });
-    }
-  }
-  return history;
-}
 async function readKeyFiles(projectPath) {
   const contents = {};
   let totalChars = 0;
@@ -2695,7 +2375,7 @@ async function readKeyFiles(projectPath) {
     try {
       const filePath = join$1(projectPath, filename);
       const content = await readFile(filePath, "utf-8");
-      const lines = content.split("\n").slice(0, 50);
+      const lines = content.split("\n").slice(0, 80);
       const truncated = lines.join("\n");
       if (totalChars + truncated.length <= MAX_KEY_FILE_CHARS) {
         contents[filename] = truncated;
@@ -2703,6 +2383,31 @@ async function readKeyFiles(projectPath) {
       }
     } catch {
     }
+  }
+  try {
+    const rootEntries = (await readdir(projectPath, { withFileTypes: true })).filter((e) => !e.name.startsWith(".") && !IGNORE_DIRS.has(e.name));
+    const rootFiles = rootEntries.filter((e) => e.isFile()).map((e) => e.name).filter((n) => SMART_INCLUDE_EXTS.has(extname(n).toLowerCase()));
+    const totalSourceFiles = rootFiles.length;
+    if (totalSourceFiles > 0 && totalSourceFiles <= MAX_SMART_INCLUDE_FILES) {
+      for (const name of rootFiles) {
+        if (totalChars >= MAX_KEY_FILE_CHARS) break;
+        if (contents[name]) continue;
+        try {
+          const fp = join$1(projectPath, name);
+          const st = await stat(fp);
+          if (!st.isFile() || st.size > 1e5) continue;
+          const raw = await readFile(fp, "utf-8");
+          const clipped = raw.length > MAX_SMART_INCLUDE_CHARS_PER_FILE ? `${raw.slice(0, MAX_SMART_INCLUDE_CHARS_PER_FILE)}
+... (truncated, use read_file for full content)` : raw;
+          if (totalChars + clipped.length <= MAX_KEY_FILE_CHARS) {
+            contents[name] = clipped;
+            totalChars += clipped.length;
+          }
+        } catch {
+        }
+      }
+    }
+  } catch {
   }
   return contents;
 }
@@ -2733,12 +2438,38 @@ async function generateFileTree(projectPath, maxDepth = 3) {
   await walk(projectPath, 0);
   return lines.join("\n");
 }
-async function runWithTools(options) {
+function detectLanguage(text) {
+  if (!text) return "unknown";
+  const lower = text.toLowerCase();
+  if (/[ãõáâéêíóôúç]/.test(lower)) return "pt";
+  if (/\b(você|gostaria|jogo|melhorar|fazer|quero|preciso|favor|criar|mudar|arquivo|projeto|estilo|deixe|coloque|por que)\b/.test(lower)) return "pt";
+  if (/\b(tienes|gracias|por favor|cómo|qué|hola|necesito|quiero)\b/.test(lower)) return "es";
+  if (/\b(the|please|would|could|create|change|file|project|style|make)\b/.test(lower)) return "en";
+  return "unknown";
+}
+const LANGUAGE_NAME = {
+  pt: "Portuguese (pt-BR)",
+  en: "English",
+  es: "Spanish"
+};
+const threadApprovals = /* @__PURE__ */ new Map();
+function getThreadApprovals(threadId) {
+  let set = threadApprovals.get(threadId);
+  if (!set) {
+    set = /* @__PURE__ */ new Set();
+    threadApprovals.set(threadId, set);
+  }
+  return set;
+}
+async function runWithOpenAITools(options) {
   const { provider, request, threadId, runId, onChunk, onApprovalNeeded, signal } = options;
   const projectPath = request.projectPath;
   if (!projectPath) {
     return provider.sendMessageStream(request, onChunk, signal);
   }
+  clearFileState();
+  clearTodos();
+  clearReadDedup();
   const [fileTree, keyFileContents] = await Promise.all([
     generateFileTree(projectPath),
     readKeyFiles(projectPath)
@@ -2746,16 +2477,35 @@ async function runWithTools(options) {
   const systemPrompt = buildSystemPrompt({
     projectPath,
     fileTree,
-    modelId: request.model,
-    keyFileContents
+    modelId: request.model
   });
+  const tools = buildOpenAIToolSchemas();
   const systemMessages = [
     { role: "user", content: systemPrompt },
     { role: "assistant", content: "Understood. I have access to file system tools and will use them when needed." }
   ];
-  const turns = [];
+  const loopHistory = [
+    ...systemMessages,
+    ...request.history
+  ];
   let iterations = 0;
   let lastResult = null;
+  console.log(`[openai-tools] approvalMode="${request.approvalMode}" threadId=${threadId}`);
+  const approvedTools = getThreadApprovals(threadId);
+  const approvalKey = (req) => {
+    const path = typeof req.args?.path === "string" && req.args.path || typeof req.args?.file_path === "string" && req.args.file_path || "*";
+    return `${req.tool}::${path}`;
+  };
+  const smartApproval = async (req) => {
+    const key = approvalKey(req);
+    if (approvedTools.has(key)) return true;
+    const approved = await onApprovalNeeded(req);
+    if (approved) approvedTools.add(key);
+    return approved;
+  };
+  const recentSignatures = [];
+  const LOOP_THRESHOLD = 3;
+  const signatureOf = (call) => `${call.name}::${JSON.stringify(call.args ?? {})}`;
   const ctx = {
     projectPath,
     threadId,
@@ -2769,76 +2519,148 @@ async function runWithTools(options) {
       });
     }
   };
+  const lastUserText = (() => {
+    if (request.message) return request.message;
+    for (let i = request.history.length - 1; i >= 0; i--) {
+      const m = request.history[i];
+      if (m.role === "user" && typeof m.content === "string") return m.content;
+    }
+    return "";
+  })();
+  const detectedLang = detectLanguage(lastUserText);
+  if (detectedLang !== "unknown") {
+    loopHistory.push({
+      role: "user",
+      content: `[system reminder] The user is writing in ${LANGUAGE_NAME[detectedLang]}. Your reply text and any ask_user labels MUST be in ${LANGUAGE_NAME[detectedLang]}. Do NOT switch language.`
+    });
+    loopHistory.push({
+      role: "assistant",
+      content: detectedLang === "pt" ? "Entendido. Vou responder em português." : detectedLang === "es" ? "Entendido. Responderé en español." : "Understood. I will reply in English."
+    });
+  }
   while (iterations < MAX_TOOL_ITERATIONS) {
     iterations++;
     if (signal?.aborted) break;
-    const currentMessage = iterations === 1 ? request.message : turns[turns.length - 1]?.toolResults ?? request.message;
-    const history = buildConversationHistory(
-      request.history,
-      systemMessages,
-      iterations === 1 ? [] : turns.slice(0, -1)
-      // exclude the last turn (it becomes the message)
-    );
+    const currentMessage = iterations === 1 ? request.message : "";
     const augmentedRequest = {
       ...request,
-      history: iterations === 1 ? [...systemMessages, ...request.history] : history,
-      message: currentMessage
+      history: loopHistory,
+      message: currentMessage,
+      tools
     };
-    const parser = new ToolCallParser();
-    let responseText = "";
-    const result = await provider.sendMessageStream(
-      augmentedRequest,
-      (chunk) => {
-        if (chunk.type === "delta" && chunk.text) {
-          responseText += chunk.text;
-          const parsed = parser.feed(chunk.text);
-          for (const p of parsed) {
-            if (p.textToEmit) {
-              onChunk({ type: "delta", text: p.textToEmit });
-            }
+    let result;
+    try {
+      result = await provider.sendMessageStream(
+        augmentedRequest,
+        (chunk) => {
+          if (chunk.type !== "done") {
+            onChunk(chunk);
           }
-        } else if (chunk.type !== "done") {
-          onChunk(chunk);
-        }
-      },
-      signal
-    );
-    const remaining = parser.flush();
-    if (remaining) {
-      const clean = stripToolCallBlocks(remaining);
-      if (clean) onChunk({ type: "delta", text: clean });
+        },
+        signal
+      );
+    } catch (err) {
+      throw err;
     }
     lastResult = result;
-    const fullParser = new ToolCallParser();
-    const fullResults = fullParser.feed(responseText);
-    const flushed = fullParser.flush();
-    if (flushed) fullResults.push(...fullParser.feed(flushed));
-    const pendingFromFull = fullParser.getPendingToolCall();
-    let parsedToolCalls = fullResults.filter((r) => r.toolCall !== null).map((r) => r.toolCall);
-    if (pendingFromFull) parsedToolCalls.push(pendingFromFull);
-    if (parsedToolCalls.length === 0) {
-      parsedToolCalls = extractToolCallsFromText(responseText);
-    }
-    if (parsedToolCalls.length === 0) {
+    if (!result.toolCalls || result.toolCalls.length === 0) {
       break;
     }
-    const toolResults = await runTools(parsedToolCalls, ctx, onApprovalNeeded);
-    const resultsMessage = toolResults.map((tr) => `<tool_result>
-${JSON.stringify({ name: tr.toolCall.name, success: tr.result.success, output: tr.result.output })}
-</tool_result>`).join("\n");
-    const wasRejected = toolResults.some((tr) => !tr.result.success && tr.result.output === "Operation rejected by user.");
-    const feedbackMessage = wasRejected ? `${resultsMessage}
-Some operations were rejected by the user. Please adjust accordingly.` : resultsMessage;
-    const cleanText = stripToolCallBlocks(responseText);
-    turns.push({
-      assistantText: cleanText,
-      toolResults: feedbackMessage
+    const parsedToolCalls = [];
+    const parseFailures = {};
+    for (let i = 0; i < result.toolCalls.length; i++) {
+      const tc = result.toolCalls[i];
+      const rawArgs = tc.function.arguments ?? "";
+      try {
+        const args = JSON.parse(rawArgs);
+        parsedToolCalls.push({ name: tc.function.name, args });
+      } catch (err) {
+        const preview = rawArgs.length > 200 ? `${rawArgs.slice(0, 200)}...` : rawArgs;
+        parseFailures[i] = `Tool arguments were not valid JSON. Parser said: ${err instanceof Error ? err.message : String(err)}. Received: ${preview || "(empty string)"}. Send a single JSON object matching the tool schema and retry.`;
+        parsedToolCalls.push({ name: tc.function.name, args: { __parseError: true } });
+      }
+    }
+    const toolResults = [];
+    for (let i = 0; i < parsedToolCalls.length; i++) {
+      if (parseFailures[i]) {
+        toolResults.push({
+          toolCall: parsedToolCalls[i],
+          result: { success: false, output: parseFailures[i] }
+        });
+        ctx.onActivity({
+          kind: "tool_result",
+          tool: parsedToolCalls[i].name,
+          summary: `Parse error: ${parseFailures[i].slice(0, 120)}`
+        });
+      } else {
+        const [execResult] = await runTools([parsedToolCalls[i]], ctx, smartApproval);
+        toolResults.push(execResult);
+      }
+    }
+    if (iterations === 1 && currentMessage) {
+      loopHistory.push({ role: "user", content: currentMessage });
+    }
+    loopHistory.push({
+      role: "assistant",
+      content: result.text || "",
+      tool_calls: result.toolCalls
     });
-    await logReRequest(threadId, runId, feedbackMessage);
+    for (let i = 0; i < toolResults.length; i++) {
+      const tr = toolResults[i];
+      const toolCallId = result.toolCalls[i]?.id ?? `call_${i}`;
+      const resultContent = tr.result.success ? tr.result.output : `Error: ${tr.result.output}`;
+      loopHistory.push({
+        role: "tool",
+        content: resultContent,
+        tool_call_id: toolCallId
+      });
+    }
+    await logReRequest(threadId, runId, `[OpenAI tools] ${toolResults.length} tool(s) executed`);
+    for (const tc of parsedToolCalls) {
+      recentSignatures.push(signatureOf(tc));
+    }
+    const windowSize = LOOP_THRESHOLD * 2;
+    if (recentSignatures.length > windowSize) {
+      recentSignatures.splice(0, recentSignatures.length - windowSize);
+    }
+    const tail = recentSignatures.slice(-LOOP_THRESHOLD);
+    const isLooping = tail.length === LOOP_THRESHOLD && tail.every((s) => s === tail[0]);
+    const last2 = recentSignatures.slice(-2);
+    const isReadLoop = last2.length === 2 && last2[0] === last2[1] && last2[0].startsWith("read_file::");
+    if (isLooping || isReadLoop) {
+      const [loopName] = tail[0].split("::");
+      console.warn(`[openai-tools] Loop detected on ${loopName} — forcing stop.`);
+      loopHistory.push({
+        role: "tool",
+        content: `STOP: You have called ${loopName} with the same arguments ${LOOP_THRESHOLD} times in a row. The result will not change. STOP calling tools. Answer the user directly with what you know from the previous tool results, or ask for clarification. Do NOT call any more tools in your next reply.`,
+        tool_call_id: `loop_guard_${iterations}`
+      });
+      const finalRequest = {
+        ...request,
+        history: loopHistory,
+        message: "",
+        // Force text-only reply
+        tools: []
+      };
+      try {
+        const finalResult = await provider.sendMessageStream(
+          finalRequest,
+          (chunk) => {
+            if (chunk.type !== "done") onChunk(chunk);
+          },
+          signal
+        );
+        lastResult = finalResult;
+      } catch (err) {
+        console.warn(`[openai-tools] final answer after loop failed:`, err);
+      }
+      break;
+    }
     if (iterations >= MAX_TOOL_ITERATIONS - 2) {
-      const warning = `
-Note: You have used ${iterations} of ${MAX_TOOL_ITERATIONS} available tool iterations. Please wrap up your work.`;
-      turns[turns.length - 1].toolResults += warning;
+      loopHistory.push({
+        role: "user",
+        content: `Note: You have used ${iterations} of ${MAX_TOOL_ITERATIONS} available tool iterations. Please wrap up your work.`
+      });
     }
   }
   onChunk({ type: "done" });
@@ -2848,6 +2670,108 @@ Note: You have used ${iterations} of ${MAX_TOOL_ITERATIONS} available tool itera
     costUsd: lastResult?.costUsd ?? 0,
     durationMs: lastResult?.durationMs ?? 0
   };
+}
+const TITLE_TIMEOUT_MS = 15e3;
+const TITLE_MAX_LEN = 60;
+const FALLBACK_MAX_LEN = 50;
+const TITLE_INSTRUCTION = "Generate a concise 3-6 word title for this conversation in the user's language. Reply with only the title — no quotes, no trailing punctuation, no preface. Conversation start:";
+const DEFAULT_TITLE_PATTERN = /^Nova thread(\s+\d+)?$/;
+function sanitizeTitle(raw) {
+  if (!raw) return null;
+  let s = raw.replace(/\r/g, "").trim();
+  const lines = s.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length > 0) {
+    s = lines[lines.length - 1];
+  }
+  s = s.replace(/^["'`*_#>\s]+/, "").replace(/["'`*_\s]+$/, "");
+  s = s.replace(/[.!?]+$/, "");
+  s = s.replace(/\s+/g, " ").trim();
+  if (!s) return null;
+  if (s.length > TITLE_MAX_LEN) {
+    s = s.slice(0, TITLE_MAX_LEN).trimEnd();
+  }
+  return s;
+}
+function fallbackFromMessage(message) {
+  const trimmed = message.replace(/\s+/g, " ").trim();
+  if (!trimmed) return null;
+  if (trimmed.length <= FALLBACK_MAX_LEN) return trimmed;
+  const slice = trimmed.slice(0, FALLBACK_MAX_LEN);
+  const lastSpace = slice.lastIndexOf(" ");
+  const cut = lastSpace > 20 ? slice.slice(0, lastSpace) : slice;
+  return cut.replace(/[\s,;:.!?-]+$/, "").trim() || null;
+}
+async function generateViaProvider(provider, model, message) {
+  const request = {
+    model,
+    effort: "low",
+    approvalMode: "suggest",
+    sessionId: null,
+    message: `${TITLE_INSTRUCTION}
+
+${message}`,
+    history: []
+  };
+  const noopChunk = (_chunk) => {
+  };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TITLE_TIMEOUT_MS);
+  try {
+    const result = await provider.sendMessageStream(
+      request,
+      noopChunk,
+      controller.signal
+    );
+    return sanitizeTitle(result.text);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+async function generateAndApplyThreadTitle(mainWindow2, thread, userMessage) {
+  try {
+    const provider = getProvider(thread.provider);
+    let title = null;
+    try {
+      title = await generateViaProvider(provider, thread.model, userMessage);
+    } catch (err) {
+      console.warn(
+        `[auto-title] provider title gen failed thread=${thread.id}: ${err instanceof Error ? err.message : String(err)}`
+      );
+      title = fallbackFromMessage(userMessage);
+    }
+    if (!title) {
+      console.log(`[auto-title] no title produced thread=${thread.id}`);
+      return;
+    }
+    const latest = await prisma.thread.findUnique({
+      where: { id: thread.id },
+      select: { title: true, projectId: true }
+    });
+    if (!latest) return;
+    if (!DEFAULT_TITLE_PATTERN.test(latest.title.trim())) {
+      console.log(
+        `[auto-title] skipped thread=${thread.id} reason=title-changed current="${latest.title}"`
+      );
+      return;
+    }
+    const uniqueTitle = await resolveUniqueThreadTitle(latest.projectId, title);
+    await prisma.thread.update({
+      where: { id: thread.id },
+      data: { title: uniqueTitle }
+    });
+    mainWindow2.webContents.send("thread:renamed", {
+      threadId: thread.id,
+      projectId: latest.projectId,
+      title: uniqueTitle
+    });
+    console.log(
+      `[auto-title] renamed thread=${thread.id} title="${uniqueTitle}"`
+    );
+  } catch (err) {
+    console.error(
+      `[auto-title] unexpected error thread=${thread.id}: ${err instanceof Error ? err.stack || err.message : String(err)}`
+    );
+  }
 }
 const activeStreams = /* @__PURE__ */ new Map();
 const pendingApprovals = /* @__PURE__ */ new Map();
@@ -2875,7 +2799,7 @@ function parseDiffStat(summary) {
 }
 function runGitNumstat(cwd) {
   return new Promise((resolve2) => {
-    execFile("git", ["diff", "--numstat"], { cwd }, (error, stdout) => {
+    execFile("git", ["diff", "--numstat", "--", "."], { cwd }, (error, stdout) => {
       if (error) {
         resolve2(null);
         return;
@@ -2986,6 +2910,21 @@ async function streamResponse(mainWindow2, threadId, _content, runId) {
   const provider = getProvider(thread.provider);
   const abortController = new AbortController();
   activeStreams.set(threadId, abortController);
+  const isFirstUserMessage = messages.filter((m) => m.role === "user").length === 1;
+  const hasDefaultTitle = DEFAULT_TITLE_PATTERN.test(thread.title.trim());
+  if (isFirstUserMessage && hasDefaultTitle) {
+    void generateAndApplyThreadTitle(
+      mainWindow2,
+      {
+        id: thread.id,
+        projectId: thread.projectId,
+        title: thread.title,
+        provider: thread.provider,
+        model: thread.model
+      },
+      _content
+    );
+  }
   const startedAt = Date.now();
   let chunkCount = 0;
   let deltaChars = 0;
@@ -2995,7 +2934,7 @@ async function streamResponse(mainWindow2, threadId, _content, runId) {
   const collectedActivities = [];
   try {
     console.log(
-      `[stream] Starting stream for thread=${threadId} runId=${runId} provider=${thread.provider} model=${thread.model} approval=${thread.approvalMode || "suggest"} hasSession=${Boolean(thread.sessionId)} historyMessages=${history.length} projectPath=${thread.project?.path || "none"} nativeTools=${provider.supportsNativeTools}`
+      `[stream] Starting stream for thread=${threadId} runId=${runId} provider=${thread.provider} model=${thread.model} approval=${thread.approvalMode || "suggest"} hasSession=${Boolean(thread.sessionId)} historyMessages=${history.length} projectPath=${thread.project?.path || "none"} toolMode=${provider.toolMode}`
     );
     const sendRequest = {
       model: thread.model,
@@ -3059,10 +2998,20 @@ async function streamResponse(mainWindow2, threadId, _content, runId) {
     };
     await logRequest(threadId, runId, _content);
     let result;
-    if (provider.supportsNativeTools) {
+    const noToolsMode = (thread.approvalMode || "suggest") === "no-tools";
+    if (noToolsMode) {
+      console.log(`[stream] no-tools mode — calling provider directly without tools`);
+      const lang = detectLanguage(_content);
+      const langLine = lang === "pt" ? "Responda SEMPRE em português brasileiro, mesmo se mensagens anteriores estiverem em outro idioma." : lang === "es" ? "Responda SIEMPRE en español." : "Always respond in the same language as the user's last message.";
+      sendRequest.systemPrompt = [
+        "Você é um assistente de programação útil e direto, integrado a um editor de código local.",
+        langLine,
+        "Não emita tokens de controle como <|channel|>, <|message|>, <|end|> ou <|return|> — escreva apenas a resposta em texto natural.",
+        "Não invente contexto de conversas anteriores. Responda apenas o que foi perguntado nesta mensagem."
+      ].join("\n");
       result = await provider.sendMessageStream(sendRequest, handleChunk, abortController.signal);
     } else {
-      result = await runWithTools({
+      result = await runWithOpenAITools({
         provider,
         request: sendRequest,
         threadId,
@@ -3088,6 +3037,7 @@ async function streamResponse(mainWindow2, threadId, _content, runId) {
         metadata: JSON.stringify({
           runId,
           provider: thread.provider,
+          model: thread.model,
           costUsd: result.costUsd,
           durationMs: result.durationMs,
           lineAdditions,
@@ -3174,12 +3124,12 @@ function registerDialogHandlers() {
     }
   });
 }
-function registerProviderHandlers() {
+function registerProviderHandlers(_mainWindow) {
   ipcMain.handle("provider:catalog", async () => {
     const providers2 = getAllProviders();
     await Promise.all(
       providers2.map(async (provider) => {
-        if (provider instanceof LmStudioProvider) {
+        if (provider instanceof LmStudioProvider || provider instanceof OllamaProvider) {
           try {
             await provider.refreshCatalogModels();
           } catch {
@@ -3190,38 +3140,13 @@ function registerProviderHandlers() {
     return providers2.map((p) => p.getCatalogEntry());
   });
   ipcMain.handle(
-    "provider:api-key-status",
-    async (_, args) => {
-      const provider = getProvider(args.provider);
-      return provider.getApiKeyStatus();
-    }
-  );
-  ipcMain.handle(
-    "provider:set-api-key",
-    async (_, args) => {
-      const provider = getProvider(args.provider);
-      await provider.setApiKey(args.apiKey);
-    }
-  );
-  ipcMain.handle(
-    "provider:remove-api-key",
-    async (_, args) => {
-      const provider = getProvider(args.provider);
-      await provider.removeApiKey();
-    }
-  );
-  ipcMain.handle(
-    "provider:test-api-key",
-    async (_, args) => {
-      const provider = getProvider(args.provider);
-      return provider.testApiKey(args.apiKey);
-    }
-  );
-  ipcMain.handle(
     "provider:get-config",
     async (_, args) => {
       if (args.provider === "lm-studio") {
         return { baseUrl: getLmStudioBaseUrl() };
+      }
+      if (args.provider === "ollama") {
+        return { baseUrl: getOllamaBaseUrl() };
       }
       return {};
     }
@@ -3233,7 +3158,30 @@ function registerProviderHandlers() {
         const next = setLmStudioBaseUrl(args.config.baseUrl || "");
         return { baseUrl: next };
       }
+      if (args.provider === "ollama") {
+        const next = setOllamaBaseUrl(args.config.baseUrl || "");
+        return { baseUrl: next };
+      }
       return {};
+    }
+  );
+  ipcMain.handle(
+    "provider:list-models",
+    async (_, args) => {
+      const provider = getProvider(args.provider);
+      if (!(provider instanceof LmStudioProvider) && !(provider instanceof OllamaProvider)) {
+        return { models: [] };
+      }
+      try {
+        const models = await provider.fetchModelValues();
+        await provider.refreshCatalogModels();
+        return { models };
+      } catch (err) {
+        return {
+          models: [],
+          error: err instanceof Error ? err.message : String(err)
+        };
+      }
     }
   );
 }

@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { prisma } from "../services/prisma.js";
 
-async function resolveUniqueThreadTitle(projectId: string, title: string): Promise<string> {
+export async function resolveUniqueThreadTitle(projectId: string, title: string): Promise<string> {
   const baseTitle = title.trim();
   if (!baseTitle) {
     return "Nova thread";
@@ -51,7 +51,7 @@ async function resolveUniqueThreadTitle(projectId: string, title: string): Promi
 
 function runGitNumstat(cwd: string): Promise<{ additions: number; deletions: number } | null> {
   return new Promise((resolve) => {
-    execFile("git", ["diff", "--numstat"], { cwd }, (error, stdout) => {
+    execFile("git", ["diff", "--numstat", "--", "."], { cwd }, (error, stdout) => {
       if (error) {
         resolve(null);
         return;

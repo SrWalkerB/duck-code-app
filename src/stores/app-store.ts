@@ -27,9 +27,11 @@ export interface QueuedMessage {
 
 export interface ThreadStreamState {
   runId: string;
+  provider?: ProviderId;
+  model?: string;
   content: string;
   error: string | null;
-  activities: { kind: string; tool?: string; summary: string }[];
+  activities: { kind: string; tool?: string; summary: string; data?: unknown }[];
   startedAt: number;
   pendingToolApproval: ToolApprovalRequest | null;
 }
@@ -61,9 +63,13 @@ interface AppState {
   setActiveView: (view: "chat" | "settings") => void;
 
   // Per-thread streaming actions
-  startStream: (threadId: string, runId: string) => void;
+  startStream: (
+    threadId: string,
+    runId: string,
+    config?: { provider?: ProviderId; model?: string }
+  ) => void;
   addStreamContent: (threadId: string, text: string) => void;
-  addStreamActivity: (threadId: string, activity: { kind: string; tool?: string; summary: string }) => void;
+  addStreamActivity: (threadId: string, activity: { kind: string; tool?: string; summary: string; data?: unknown }) => void;
   setStreamError: (threadId: string, error: string) => void;
   endStream: (threadId: string) => void;
   setThreadToolApproval: (threadId: string, approval: ToolApprovalRequest | null) => void;
@@ -144,7 +150,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setActiveProject: (projectId) => {
-    set({ activeProjectId: projectId });
+    const currentProjectId = get().activeProjectId;
+    const didProjectChange = projectId !== currentProjectId;
+
+    if (didProjectChange) {
+      get().clearQueue();
+      set({ activeProjectId: projectId, activeThreadId: null });
+    } else {
+      set({ activeProjectId: projectId });
+    }
+
     if (projectId) {
       get().fetchThreads(projectId);
     }
@@ -160,12 +175,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setActiveView: (view) => set({ activeView: view }),
 
-  startStream: (threadId, runId) => {
+  startStream: (threadId, runId, config) => {
     set((state) => ({
       activeStreams: {
         ...state.activeStreams,
         [threadId]: {
           runId,
+          provider: config?.provider,
+          model: config?.model,
           content: "",
           error: null,
           activities: [],
@@ -217,7 +234,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   endStream: (threadId) => {
     set((state) => {
-      const { [threadId]: _, ...rest } = state.activeStreams;
+      const rest = { ...state.activeStreams };
+      delete rest[threadId];
       return { activeStreams: rest };
     });
   },
@@ -285,3 +303,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   clearQueue: () => set({ messageQueue: [] }),
 }));
+
+electronAPI.on("thread:renamed", (...args: unknown[]) => {
+  const payload = args[0] as { projectId?: string } | undefined;
+  if (!payload?.projectId) return;
+  useAppStore.getState().fetchThreads(payload.projectId);
+});

@@ -17,7 +17,7 @@ export function StatusBar() {
         )
       : null;
 
-  const activeProvider = activeThread?.provider || "openai";
+  const activeProvider = activeThread?.provider || "lm-studio";
   const providerInfo = getProviderEntry(providerCatalog, activeProvider);
 
   return (

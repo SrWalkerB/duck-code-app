@@ -12649,29 +12649,29 @@ const createLucideIcon = (iconName, iconNode) => {
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$I = [
+const __iconNode$O = [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
   ["path", { d: "M19 12H5", key: "x3x0zl" }]
 ];
-const ArrowLeft = createLucideIcon("arrow-left", __iconNode$I);
+const ArrowLeft = createLucideIcon("arrow-left", __iconNode$O);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$H = [
+const __iconNode$N = [
   ["path", { d: "m5 12 7-7 7 7", key: "hav0vg" }],
   ["path", { d: "M12 19V5", key: "x0mq9r" }]
 ];
-const ArrowUp = createLucideIcon("arrow-up", __iconNode$H);
+const ArrowUp = createLucideIcon("arrow-up", __iconNode$N);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$G = [
+const __iconNode$M = [
   ["path", { d: "M12 7v14", key: "1akyts" }],
   [
     "path",
@@ -12681,14 +12681,14 @@ const __iconNode$G = [
     }
   ]
 ];
-const BookOpen = createLucideIcon("book-open", __iconNode$G);
+const BookOpen = createLucideIcon("book-open", __iconNode$M);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$F = [
+const __iconNode$L = [
   ["path", { d: "M12 8V4H8", key: "hb8ula" }],
   ["rect", { width: "16", height: "12", x: "4", y: "8", rx: "2", key: "enze0r" }],
   ["path", { d: "M2 14h2", key: "vft8re" }],
@@ -12696,14 +12696,14 @@ const __iconNode$F = [
   ["path", { d: "M15 13v2", key: "1xurst" }],
   ["path", { d: "M9 13v2", key: "rq6x2g" }]
 ];
-const Bot = createLucideIcon("bot", __iconNode$F);
+const Bot = createLucideIcon("bot", __iconNode$L);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$E = [
+const __iconNode$K = [
   ["path", { d: "M12 18V5", key: "adv99a" }],
   ["path", { d: "M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4", key: "1e3is1" }],
   ["path", { d: "M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5", key: "1gqd8o" }],
@@ -12713,31 +12713,99 @@ const __iconNode$E = [
   ["path", { d: "M6 18a4 4 0 0 1-2-7.464", key: "k1g0md" }],
   ["path", { d: "M6.003 5.125a4 4 0 0 0-2.526 5.77", key: "q97ue3" }]
 ];
-const Brain = createLucideIcon("brain", __iconNode$E);
+const Brain = createLucideIcon("brain", __iconNode$K);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$D = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-const Check = createLucideIcon("check", __iconNode$D);
+const __iconNode$J = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+const Check = createLucideIcon("check", __iconNode$J);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$C = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-const ChevronDown = createLucideIcon("chevron-down", __iconNode$C);
+const __iconNode$I = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+const ChevronDown = createLucideIcon("chevron-down", __iconNode$I);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$B = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-const ChevronRight = createLucideIcon("chevron-right", __iconNode$B);
+const __iconNode$H = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+const ChevronRight = createLucideIcon("chevron-right", __iconNode$H);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$G = [
+  ["path", { d: "m7 20 5-5 5 5", key: "13a0gw" }],
+  ["path", { d: "m7 4 5 5 5-5", key: "1kwcof" }]
+];
+const ChevronsDownUp = createLucideIcon("chevrons-down-up", __iconNode$G);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$F = [
+  ["path", { d: "m7 15 5 5 5-5", key: "1hf1tw" }],
+  ["path", { d: "m7 9 5-5 5 5", key: "sgt6xg" }]
+];
+const ChevronsUpDown = createLucideIcon("chevrons-up-down", __iconNode$F);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$E = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
+];
+const CircleCheck = createLucideIcon("circle-check", __iconNode$E);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$D = [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "m15 9-6 6", key: "1uzhvr" }],
+  ["path", { d: "m9 9 6 6", key: "z0biqf" }]
+];
+const CircleX = createLucideIcon("circle-x", __iconNode$D);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$C = [
+  ["path", { d: "m18 16 4-4-4-4", key: "1inbqp" }],
+  ["path", { d: "m6 8-4 4 4 4", key: "15zrgr" }],
+  ["path", { d: "m14.5 4-5 16", key: "e7oirm" }]
+];
+const CodeXml = createLucideIcon("code-xml", __iconNode$C);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$B = [
+  ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
+  ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
+];
+const Copy = createLucideIcon("copy", __iconNode$B);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
@@ -12745,10 +12813,10 @@ const ChevronRight = createLucideIcon("chevron-right", __iconNode$B);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$A = [
-  ["path", { d: "m7 20 5-5 5 5", key: "13a0gw" }],
-  ["path", { d: "m7 4 5 5 5-5", key: "1kwcof" }]
+  ["path", { d: "m15 10 5 5-5 5", key: "qqa56n" }],
+  ["path", { d: "M4 4v7a4 4 0 0 0 4 4h12", key: "z08zvw" }]
 ];
-const ChevronsDownUp = createLucideIcon("chevrons-down-up", __iconNode$A);
+const CornerDownRight = createLucideIcon("corner-down-right", __iconNode$A);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
@@ -12756,50 +12824,6 @@ const ChevronsDownUp = createLucideIcon("chevrons-down-up", __iconNode$A);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$z = [
-  ["path", { d: "m7 15 5 5 5-5", key: "1hf1tw" }],
-  ["path", { d: "m7 9 5-5 5 5", key: "sgt6xg" }]
-];
-const ChevronsUpDown = createLucideIcon("chevrons-up-down", __iconNode$z);
-/**
- * @license lucide-react v1.7.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$y = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
-];
-const CircleCheck = createLucideIcon("circle-check", __iconNode$y);
-/**
- * @license lucide-react v1.7.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$x = [
-  ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2", key: "17jyea" }],
-  ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2", key: "zix9uf" }]
-];
-const Copy = createLucideIcon("copy", __iconNode$x);
-/**
- * @license lucide-react v1.7.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$w = [
-  ["path", { d: "m15 10 5 5-5 5", key: "qqa56n" }],
-  ["path", { d: "M4 4v7a4 4 0 0 0 4 4h12", key: "z08zvw" }]
-];
-const CornerDownRight = createLucideIcon("corner-down-right", __iconNode$w);
-/**
- * @license lucide-react v1.7.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$v = [
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M17 20v2", key: "1rnc9c" }],
@@ -12815,14 +12839,14 @@ const __iconNode$v = [
   ["rect", { x: "4", y: "4", width: "16", height: "16", rx: "2", key: "1vbyd7" }],
   ["rect", { x: "8", y: "8", width: "8", height: "8", rx: "1", key: "z9xiuo" }]
 ];
-const Cpu = createLucideIcon("cpu", __iconNode$v);
+const Cpu = createLucideIcon("cpu", __iconNode$z);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$u = [
+const __iconNode$y = [
   [
     "path",
     {
@@ -12832,14 +12856,52 @@ const __iconNode$u = [
   ],
   ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-const Eye = createLucideIcon("eye", __iconNode$u);
+const Eye = createLucideIcon("eye", __iconNode$y);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$t = [
+const __iconNode$x = [
+  [
+    "path",
+    {
+      d: "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
+      key: "1oefj6"
+    }
+  ],
+  ["path", { d: "M14 2v5a1 1 0 0 0 1 1h5", key: "wfsgrz" }],
+  ["path", { d: "M9 15h6", key: "cctwl0" }],
+  ["path", { d: "M12 18v-6", key: "17g6i2" }]
+];
+const FilePlus = createLucideIcon("file-plus", __iconNode$x);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$w = [
+  [
+    "path",
+    {
+      d: "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
+      key: "1oefj6"
+    }
+  ],
+  ["path", { d: "M14 2v5a1 1 0 0 0 1 1h5", key: "wfsgrz" }],
+  ["circle", { cx: "11.5", cy: "14.5", r: "2.5", key: "1bq0ko" }],
+  ["path", { d: "M13.3 16.3 15 18", key: "2quom7" }]
+];
+const FileSearch = createLucideIcon("file-search", __iconNode$w);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$v = [
   [
     "path",
     {
@@ -12852,14 +12914,14 @@ const __iconNode$t = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-const FileText = createLucideIcon("file-text", __iconNode$t);
+const FileText = createLucideIcon("file-text", __iconNode$v);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$s = [
+const __iconNode$u = [
   [
     "path",
     {
@@ -12869,7 +12931,41 @@ const __iconNode$s = [
   ],
   ["path", { d: "M14 2v5a1 1 0 0 0 1 1h5", key: "wfsgrz" }]
 ];
-const File = createLucideIcon("file", __iconNode$s);
+const File = createLucideIcon("file", __iconNode$u);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$t = [
+  [
+    "path",
+    {
+      d: "m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2",
+      key: "usdka0"
+    }
+  ]
+];
+const FolderOpen = createLucideIcon("folder-open", __iconNode$t);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$s = [
+  ["path", { d: "M12 10v6", key: "1bos4e" }],
+  ["path", { d: "M9 13h6", key: "1uhe8q" }],
+  [
+    "path",
+    {
+      d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z",
+      key: "1kt360"
+    }
+  ]
+];
+const FolderPlus = createLucideIcon("folder-plus", __iconNode$s);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
@@ -12880,12 +12976,14 @@ const __iconNode$r = [
   [
     "path",
     {
-      d: "m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2",
-      key: "usdka0"
+      d: "M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z",
+      key: "1fr9dc"
     }
-  ]
+  ],
+  ["circle", { cx: "12", cy: "13", r: "2", key: "1c1ljs" }],
+  ["path", { d: "M12 15v5", key: "11xva1" }]
 ];
-const FolderOpen = createLucideIcon("folder-open", __iconNode$r);
+const FolderRoot = createLucideIcon("folder-root", __iconNode$r);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
@@ -12896,14 +12994,12 @@ const __iconNode$q = [
   [
     "path",
     {
-      d: "M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z",
-      key: "1fr9dc"
+      d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z",
+      key: "1kt360"
     }
-  ],
-  ["circle", { cx: "12", cy: "13", r: "2", key: "1c1ljs" }],
-  ["path", { d: "M12 15v5", key: "11xva1" }]
+  ]
 ];
-const FolderRoot = createLucideIcon("folder-root", __iconNode$q);
+const Folder = createLucideIcon("folder", __iconNode$q);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
@@ -12911,15 +13007,11 @@ const FolderRoot = createLucideIcon("folder-root", __iconNode$q);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$p = [
-  [
-    "path",
-    {
-      d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z",
-      key: "1kt360"
-    }
-  ]
+  ["path", { d: "M15 6a9 9 0 0 0-9 9V3", key: "1cii5b" }],
+  ["circle", { cx: "18", cy: "6", r: "3", key: "1h7g24" }],
+  ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }]
 ];
-const Folder = createLucideIcon("folder", __iconNode$p);
+const GitBranch = createLucideIcon("git-branch", __iconNode$p);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
@@ -12927,11 +13019,11 @@ const Folder = createLucideIcon("folder", __iconNode$p);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$o = [
-  ["path", { d: "M15 6a9 9 0 0 0-9 9V3", key: "1cii5b" }],
-  ["circle", { cx: "18", cy: "6", r: "3", key: "1h7g24" }],
-  ["circle", { cx: "6", cy: "18", r: "3", key: "fqmcym" }]
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "13o1zl" }],
+  ["path", { d: "M2 12h20", key: "9i4pu4" }]
 ];
-const GitBranch = createLucideIcon("git-branch", __iconNode$o);
+const Globe = createLucideIcon("globe", __iconNode$o);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
@@ -12939,11 +13031,11 @@ const GitBranch = createLucideIcon("git-branch", __iconNode$o);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$n = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["path", { d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20", key: "13o1zl" }],
-  ["path", { d: "M2 12h20", key: "9i4pu4" }]
+  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", ry: "2", key: "1m3agn" }],
+  ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }],
+  ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }]
 ];
-const Globe = createLucideIcon("globe", __iconNode$n);
+const Image = createLucideIcon("image", __iconNode$n);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
@@ -12951,36 +13043,39 @@ const Globe = createLucideIcon("globe", __iconNode$n);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$m = [
-  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", ry: "2", key: "1m3agn" }],
-  ["circle", { cx: "9", cy: "9", r: "2", key: "af1f0g" }],
-  ["path", { d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21", key: "1xmnt7" }]
+  ["path", { d: "M13 5h8", key: "a7qcls" }],
+  ["path", { d: "M13 12h8", key: "h98zly" }],
+  ["path", { d: "M13 19h8", key: "c3s6r1" }],
+  ["path", { d: "m3 17 2 2 4-4", key: "1jhpwq" }],
+  ["path", { d: "m3 7 2 2 4-4", key: "1obspn" }]
 ];
-const Image = createLucideIcon("image", __iconNode$m);
+const ListChecks = createLucideIcon("list-checks", __iconNode$m);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$l = [
+const __iconNode$l = [["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]];
+const LoaderCircle = createLucideIcon("loader-circle", __iconNode$l);
+/**
+ * @license lucide-react v1.7.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$k = [
   [
     "path",
     {
-      d: "M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z",
-      key: "1s6t7t"
+      d: "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719",
+      key: "1sd12s"
     }
   ],
-  ["circle", { cx: "16.5", cy: "7.5", r: ".5", fill: "currentColor", key: "w0ekpg" }]
+  ["path", { d: "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3", key: "1u773s" }],
+  ["path", { d: "M12 17h.01", key: "p32p05" }]
 ];
-const KeyRound = createLucideIcon("key-round", __iconNode$l);
-/**
- * @license lucide-react v1.7.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$k = [["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]];
-const LoaderCircle = createLucideIcon("loader-circle", __iconNode$k);
+const MessageCircleQuestionMark = createLucideIcon("message-circle-question-mark", __iconNode$k);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
@@ -13169,9 +13264,11 @@ const __iconNode$7 = [
       d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
       key: "oel41y"
     }
-  ]
+  ],
+  ["path", { d: "M12 8v4", key: "1got3b" }],
+  ["path", { d: "M12 16h.01", key: "1drbdi" }]
 ];
-const Shield = createLucideIcon("shield", __iconNode$7);
+const ShieldAlert = createLucideIcon("shield-alert", __iconNode$7);
 /**
  * @license lucide-react v1.7.0 - ISC
  *
@@ -23482,72 +23579,18 @@ const createImpl = (createState2) => {
 const create$1 = ((createState2) => createState2 ? createImpl(createState2) : createImpl);
 const PROVIDER_CATALOG = [
   {
-    id: "claude",
-    label: "Claude API",
-    default_model: "claude-sonnet-4-6",
-    models: [
-      { label: "Opus 4.6", value: "claude-opus-4-6" },
-      { label: "Sonnet 4.6", value: "claude-sonnet-4-6" },
-      { label: "Haiku 4.5", value: "claude-haiku-4-5-20251001" }
-    ],
-    capabilities: {
-      supports_effort: false,
-      requires_api_key: true
-    }
-  },
-  {
-    id: "openai",
-    label: "OpenAI API",
-    default_model: "gpt-5.4",
-    models: [
-      { label: "GPT-5.4", value: "gpt-5.4" },
-      { label: "GPT-5.4 Mini", value: "gpt-5.4-mini" },
-      { label: "GPT-5.3 Codex", value: "gpt-5.3-codex" },
-      { label: "GPT-5.2 Codex", value: "gpt-5.2-codex" },
-      { label: "GPT-5.2", value: "gpt-5.2" },
-      { label: "GPT-5.1 Codex Max", value: "gpt-5.1-codex-max" },
-      { label: "GPT-5.1 Mini", value: "gpt-5.1-mini" }
-    ],
-    capabilities: {
-      supports_effort: true,
-      requires_api_key: true
-    }
-  },
-  {
-    id: "codex",
-    label: "Codex CLI",
-    default_model: "gpt-5.4",
-    models: [
-      { label: "GPT-5.4", value: "gpt-5.4" },
-      { label: "GPT-5.4 Mini", value: "gpt-5.4-mini" },
-      { label: "GPT-5.3 Codex", value: "gpt-5.3-codex" },
-      { label: "GPT-5.2 Codex", value: "gpt-5.2-codex" },
-      { label: "GPT-5.2", value: "gpt-5.2" },
-      { label: "GPT-5.1 Codex Max", value: "gpt-5.1-codex-max" },
-      { label: "GPT-5.1 Mini", value: "gpt-5.1-mini" }
-    ],
-    capabilities: {
-      supports_effort: false,
-      requires_api_key: false
-    }
-  },
-  {
-    id: "claude-code",
-    label: "Claude Code CLI",
-    default_model: "claude-sonnet-4-6",
-    models: [
-      { label: "Opus 4.6", value: "claude-opus-4-6" },
-      { label: "Sonnet 4.6", value: "claude-sonnet-4-6" },
-      { label: "Haiku 4.5", value: "claude-haiku-4-5-20251001" }
-    ],
-    capabilities: {
-      supports_effort: false,
-      requires_api_key: false
-    }
-  },
-  {
     id: "lm-studio",
     label: "LM Studio (Local)",
+    default_model: "local-model",
+    models: [{ label: "Modelo local", value: "local-model" }],
+    capabilities: {
+      supports_effort: false,
+      requires_api_key: false
+    }
+  },
+  {
+    id: "ollama",
+    label: "Ollama (Local)",
     default_model: "local-model",
     models: [{ label: "Modelo local", value: "local-model" }],
     capabilities: {
@@ -23565,11 +23608,8 @@ function getProviderDefaultModel(catalog, provider) {
 }
 function buildDefaultModelsMap(catalog) {
   return {
-    claude: getProviderDefaultModel(catalog, "claude"),
-    openai: getProviderDefaultModel(catalog, "openai"),
-    codex: getProviderDefaultModel(catalog, "codex"),
-    "claude-code": getProviderDefaultModel(catalog, "claude-code"),
-    "lm-studio": getProviderDefaultModel(catalog, "lm-studio")
+    "lm-studio": getProviderDefaultModel(catalog, "lm-studio"),
+    ollama: getProviderDefaultModel(catalog, "ollama")
   };
 }
 const useAppStore = create$1((set, get) => ({
@@ -23580,14 +23620,7 @@ const useAppStore = create$1((set, get) => ({
   activeProjectId: null,
   activeThreadId: null,
   activeView: "chat",
-  isStreaming: false,
-  streamingStartedAt: null,
-  streamingThreadId: null,
-  activeRunId: null,
-  streamingContent: "",
-  streamingError: null,
-  streamingActivities: [],
-  pendingToolApproval: null,
+  activeStreams: {},
   filePanelOpen: false,
   sidebarOpen: true,
   terminalPanelOpen: false,
@@ -23638,7 +23671,14 @@ const useAppStore = create$1((set, get) => ({
     }
   },
   setActiveProject: (projectId) => {
-    set({ activeProjectId: projectId });
+    const currentProjectId = get().activeProjectId;
+    const didProjectChange = projectId !== currentProjectId;
+    if (didProjectChange) {
+      get().clearQueue();
+      set({ activeProjectId: projectId, activeThreadId: null });
+    } else {
+      set({ activeProjectId: projectId });
+    }
     if (projectId) {
       get().fetchThreads(projectId);
     }
@@ -23651,33 +23691,87 @@ const useAppStore = create$1((set, get) => ({
     }
   },
   setActiveView: (view) => set({ activeView: view }),
-  addStreamContent: (text2) => {
+  startStream: (threadId, runId, config) => {
     set((state) => ({
-      streamingContent: state.streamingContent + text2
+      activeStreams: {
+        ...state.activeStreams,
+        [threadId]: {
+          runId,
+          provider: config?.provider,
+          model: config?.model,
+          content: "",
+          error: null,
+          activities: [],
+          startedAt: Date.now(),
+          pendingToolApproval: null
+        }
+      }
     }));
   },
-  setStreamingThreadId: (threadId) => set({ streamingThreadId: threadId }),
-  setActiveRunId: (runId) => set({ activeRunId: runId }),
-  setIsStreaming: (streaming) => {
-    set((state) => ({
-      isStreaming: streaming,
-      streamingStartedAt: streaming ? state.streamingStartedAt ?? Date.now() : null
-    }));
-  },
-  setStreamingError: (error) => set({ streamingError: error }),
-  clearStream: () => {
-    set({
-      activeRunId: null,
-      streamingThreadId: null,
-      streamingContent: "",
-      streamingError: null,
-      streamingActivities: []
+  addStreamContent: (threadId, text2) => {
+    set((state) => {
+      const stream = state.activeStreams[threadId];
+      if (!stream) return state;
+      return {
+        activeStreams: {
+          ...state.activeStreams,
+          [threadId]: { ...stream, content: stream.content + text2 }
+        }
+      };
     });
   },
-  addStreamActivity: (activity) => {
-    set((state) => ({
-      streamingActivities: [...state.streamingActivities, activity]
-    }));
+  addStreamActivity: (threadId, activity) => {
+    set((state) => {
+      const stream = state.activeStreams[threadId];
+      if (!stream) return state;
+      return {
+        activeStreams: {
+          ...state.activeStreams,
+          [threadId]: { ...stream, activities: [...stream.activities, activity] }
+        }
+      };
+    });
+  },
+  setStreamError: (threadId, error) => {
+    set((state) => {
+      const stream = state.activeStreams[threadId];
+      if (!stream) return state;
+      return {
+        activeStreams: {
+          ...state.activeStreams,
+          [threadId]: { ...stream, error }
+        }
+      };
+    });
+  },
+  endStream: (threadId) => {
+    set((state) => {
+      const rest = { ...state.activeStreams };
+      delete rest[threadId];
+      return { activeStreams: rest };
+    });
+  },
+  setThreadToolApproval: (threadId, approval) => {
+    set((state) => {
+      const stream = state.activeStreams[threadId];
+      if (!stream) return state;
+      return {
+        activeStreams: {
+          ...state.activeStreams,
+          [threadId]: { ...stream, pendingToolApproval: approval }
+        }
+      };
+    });
+  },
+  respondToolApproval: async (threadId, approved) => {
+    const stream = get().activeStreams[threadId];
+    if (!stream?.pendingToolApproval) return;
+    await electronAPI.invoke("message:tool-approval-response", {
+      threadId,
+      runId: stream.pendingToolApproval.runId,
+      approved
+    });
+    get().setThreadToolApproval(threadId, null);
   },
   addOptimisticMessage: (message) => {
     set((state) => ({
@@ -23697,18 +23791,6 @@ const useAppStore = create$1((set, get) => ({
     terminalPanelOpen: open,
     terminalProjectPath: open ? state.terminalProjectPath : null
   })),
-  setPendingToolApproval: (approval) => set({ pendingToolApproval: approval }),
-  respondToolApproval: async (approved) => {
-    const state = get();
-    const approval = state.pendingToolApproval;
-    if (!approval || !state.activeThreadId) return;
-    await electronAPI.invoke("message:tool-approval-response", {
-      threadId: state.activeThreadId,
-      runId: approval.runId,
-      approved
-    });
-    set({ pendingToolApproval: null });
-  },
   enqueueMessage: (message) => {
     set({ messageQueue: [message] });
   },
@@ -23726,6 +23808,11 @@ const useAppStore = create$1((set, get) => ({
   },
   clearQueue: () => set({ messageQueue: [] })
 }));
+electronAPI.on("thread:renamed", (...args) => {
+  const payload = args[0];
+  if (!payload?.projectId) return;
+  useAppStore.getState().fetchThreads(payload.projectId);
+});
 function relativeTime(timestamp) {
   const now = Date.now();
   const ts2 = typeof timestamp === "string" ? new Date(timestamp).getTime() : timestamp;
@@ -23770,6 +23857,8 @@ function NewProjectDialog({
   const [color2, setColor] = reactExports.useState(PRESET_COLORS[0]);
   const [loading, setLoading] = reactExports.useState(false);
   const fetchProjects = useAppStore((s15) => s15.fetchProjects);
+  const setActiveProject = useAppStore((s15) => s15.setActiveProject);
+  const setActiveThread = useAppStore((s15) => s15.setActiveThread);
   const handlePickFolder = async () => {
     console.log("[renderer] handlePickFolder called");
     try {
@@ -23790,8 +23879,14 @@ function NewProjectDialog({
     if (!name2.trim() || !path2.trim()) return;
     setLoading(true);
     try {
-      await electronAPI.invoke("project:create", { name: name2.trim(), path: path2.trim(), color: color2 });
+      const project = await electronAPI.invoke("project:create", {
+        name: name2.trim(),
+        path: path2.trim(),
+        color: color2
+      });
       await fetchProjects();
+      setActiveProject(project.id);
+      setActiveThread(null);
       onOpenChange(false);
       setName("");
       setPath("");
@@ -23894,7 +23989,8 @@ function saveSettings(state) {
         defaultProvider: state.defaultProvider,
         defaultModels: state.defaultModels,
         defaultEffort: state.defaultEffort,
-        defaultApprovalMode: state.defaultApprovalMode
+        defaultApprovalMode: state.defaultApprovalMode,
+        preferredCodeEditor: state.preferredCodeEditor
       })
     );
   } catch {
@@ -23908,20 +24004,20 @@ function applyTheme(theme) {
   }
 }
 function isProvider(value) {
-  return value === "claude" || value === "openai" || value === "codex" || value === "claude-code" || value === "lm-studio";
+  return value === "lm-studio" || value === "ollama";
+}
+function isCodeEditor(value) {
+  return value === "vscode" || value === "cursor" || value === "windsurf" || value === "zed";
 }
 const saved = loadSettings();
 const fallbackModels = buildDefaultModelsMap(FALLBACK_PROVIDER_CATALOG);
 const savedDefaultModels = saved.defaultModels && typeof saved.defaultModels === "object" ? saved.defaultModels : {};
 const initialDefaultModels = {
-  claude: savedDefaultModels.claude || fallbackModels.claude,
-  openai: savedDefaultModels.openai || fallbackModels.openai,
-  codex: savedDefaultModels.codex || fallbackModels.codex,
-  "claude-code": savedDefaultModels["claude-code"] || fallbackModels["claude-code"],
-  "lm-studio": savedDefaultModels["lm-studio"] || fallbackModels["lm-studio"]
+  "lm-studio": savedDefaultModels["lm-studio"] || fallbackModels["lm-studio"],
+  ollama: savedDefaultModels.ollama || fallbackModels.ollama
 };
 const savedProvider = saved.defaultProvider;
-const initialDefaultProvider = isProvider(savedProvider) ? savedProvider : "openai";
+const initialDefaultProvider = isProvider(savedProvider) ? savedProvider : "lm-studio";
 const useSettingsStore = create$1((set, get) => {
   const initialTheme = saved.theme === "light" ? "light" : "dark";
   applyTheme(initialTheme);
@@ -23931,6 +24027,7 @@ const useSettingsStore = create$1((set, get) => {
     defaultModels: initialDefaultModels,
     defaultEffort: typeof saved.defaultEffort === "string" ? saved.defaultEffort : "medium",
     defaultApprovalMode: saved.defaultApprovalMode || "suggest",
+    preferredCodeEditor: isCodeEditor(saved.preferredCodeEditor) ? saved.preferredCodeEditor : "vscode",
     setTheme: (theme) => {
       applyTheme(theme);
       set({ theme });
@@ -23954,6 +24051,10 @@ const useSettingsStore = create$1((set, get) => {
       set({ defaultApprovalMode });
       saveSettings({ ...get(), defaultApprovalMode });
     },
+    setPreferredCodeEditor: (preferredCodeEditor) => {
+      set({ preferredCodeEditor });
+      saveSettings({ ...get(), preferredCodeEditor });
+    },
     toggleTheme: () => {
       const newTheme = get().theme === "dark" ? "light" : "dark";
       applyTheme(newTheme);
@@ -23968,8 +24069,7 @@ function Sidebar() {
     threads,
     activeProjectId,
     activeThreadId,
-    isStreaming,
-    streamingThreadId,
+    activeStreams,
     setActiveProject,
     setActiveThread,
     setActiveView,
@@ -23978,15 +24078,19 @@ function Sidebar() {
     providerCatalog
   } = useAppStore();
   const [completedThread, setCompletedThread] = reactExports.useState(null);
-  const prevStreamingRef = reactExports.useRef(false);
+  const prevStreamingIdsRef = reactExports.useRef(/* @__PURE__ */ new Set());
   reactExports.useEffect(() => {
-    if (prevStreamingRef.current && !isStreaming && streamingThreadId) {
-      setCompletedThread(streamingThreadId);
-      const timer = setTimeout(() => setCompletedThread(null), 3e3);
-      return () => clearTimeout(timer);
+    const currentIds = new Set(Object.keys(activeStreams));
+    for (const threadId of prevStreamingIdsRef.current) {
+      if (!currentIds.has(threadId)) {
+        setCompletedThread(threadId);
+        const timer = setTimeout(() => setCompletedThread(null), 3e3);
+        prevStreamingIdsRef.current = currentIds;
+        return () => clearTimeout(timer);
+      }
     }
-    prevStreamingRef.current = isStreaming;
-  }, [isStreaming, streamingThreadId]);
+    prevStreamingIdsRef.current = currentIds;
+  }, [activeStreams]);
   const [newProjectOpen, setNewProjectOpen] = reactExports.useState(false);
   const { theme, toggleTheme } = useSettingsStore();
   const [renameProject, setRenameProject] = reactExports.useState(null);
@@ -24000,14 +24104,12 @@ function Sidebar() {
     fetchProjects();
   }, [fetchProjects]);
   reactExports.useEffect(() => {
-    if (activeProjectId) {
-      setExpandedProjects((prev) => /* @__PURE__ */ new Set([...prev, activeProjectId]));
-    }
-  }, [activeProjectId]);
-  reactExports.useEffect(() => {
     projects.forEach((p) => fetchThreads(p.id));
   }, [projects, fetchThreads]);
   const handleToggleProject = (projectId, isOpen) => {
+    if (isOpen) {
+      setActiveProject(projectId);
+    }
     setExpandedProjects((prev) => {
       const next = new Set(prev);
       if (isOpen) {
@@ -24118,7 +24220,7 @@ function Sidebar() {
     setActiveThread(thread.id);
   };
   const isDark = theme === "dark";
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("aside", { className: "flex h-full w-[280px] shrink-0 flex-col border-r border-border/50 bg-sidebar-background", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("aside", { className: "flex h-full min-h-0 w-[280px] shrink-0 flex-col border-r border-border/50 bg-sidebar-background", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col gap-0.5 px-3 pt-3 pb-1", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between mb-1", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-muted-foreground/60 uppercase tracking-wider px-2", children: "Duck Code" }),
@@ -24183,9 +24285,9 @@ function Sidebar() {
         )
       ] })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollArea, { className: "flex-1", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-2", children: projects.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-3 py-8 text-center text-xs text-muted-foreground", children: "Nenhum projeto ainda." }) : projects.map((project) => {
+    /* @__PURE__ */ jsxRuntimeExports.jsx(ScrollArea, { className: "min-h-0 flex-1", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-2", children: projects.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-3 py-8 text-center text-xs text-muted-foreground", children: "Nenhum projeto ainda." }) : projects.map((project) => {
       const projectThreads = threads[project.id] || [];
-      const isExpanded = expandedProjects.has(project.id);
+      const isExpanded = expandedProjects.has(project.id) || activeProjectId === project.id;
       return /* @__PURE__ */ jsxRuntimeExports.jsxs(
         Collapsible,
         {
@@ -24288,15 +24390,16 @@ function Sidebar() {
                   ),
                   onClick: () => handleSelectThread(thread),
                   children: [
-                    isStreaming && streamingThreadId === thread.id ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-3.5 shrink-0 animate-spin text-blue-400" }) : completedThread === thread.id ? /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheck, { className: "size-3.5 shrink-0 text-emerald-500" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(MessageSquare, { className: "size-3.5 shrink-0" }),
+                    activeStreams[thread.id] ? /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "size-3.5 shrink-0 animate-spin text-blue-400" }) : completedThread === thread.id ? /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheck, { className: "size-3.5 shrink-0 text-emerald-500" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(MessageSquare, { className: "size-3.5 shrink-0" }),
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "flex-1 truncate", children: thread.title }),
-                    (typeof thread.lineAdditions === "number" || typeof thread.lineDeletions === "number") && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "shrink-0 text-xs tabular-nums", children: [
-                      typeof thread.lineAdditions === "number" && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-emerald-500", children: [
+                    activeStreams[thread.id]?.pendingToolApproval && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shrink-0 rounded-full border border-amber-500/50 bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-500", children: "Acao necessaria" }),
+                    ((thread.lineAdditions ?? 0) !== 0 || (thread.lineDeletions ?? 0) !== 0) && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "shrink-0 text-xs tabular-nums", children: [
+                      typeof thread.lineAdditions === "number" && thread.lineAdditions !== 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-emerald-500", children: [
                         "+",
                         thread.lineAdditions
                       ] }),
-                      typeof thread.lineAdditions === "number" && typeof thread.lineDeletions === "number" && " ",
-                      typeof thread.lineDeletions === "number" && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-red-500", children: [
+                      typeof thread.lineAdditions === "number" && thread.lineAdditions !== 0 && typeof thread.lineDeletions === "number" && thread.lineDeletions !== 0 && " ",
+                      typeof thread.lineDeletions === "number" && thread.lineDeletions !== 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-red-500", children: [
                         "-",
                         thread.lineDeletions
                       ] })
@@ -24502,134 +24605,145 @@ function DropdownMenuItem({
     }
   );
 }
-function useChat() {
+function useStreamListeners() {
+  const activeStreams = useAppStore((s15) => s15.activeStreams);
   const {
-    activeThreadId,
-    isStreaming,
-    streamingThreadId,
-    streamingContent,
-    streamingError,
-    setStreamingThreadId,
-    setActiveRunId,
-    setIsStreaming,
-    setStreamingError,
-    clearStream,
-    fetchMessages,
-    addOptimisticMessage,
     addStreamContent,
-    addStreamActivity
+    addStreamActivity,
+    setStreamError,
+    endStream,
+    fetchMessages,
+    setThreadToolApproval
   } = useAppStore();
+  const sendMessageRef = reactExports.useRef(null);
+  const listenersRef = reactExports.useRef(/* @__PURE__ */ new Map());
   reactExports.useEffect(() => {
-    const listenerThreadId = streamingThreadId ?? activeThreadId;
-    if (!listenerThreadId) return;
-    const unsubStream = electronAPI.on(
-      `chat:stream:${listenerThreadId}`,
-      (...args) => {
-        const payload = args[0];
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        console.log("[chat:stream] delta:", payload.text.slice(0, 50));
-        addStreamContent(payload.text);
+    const streamingThreadIds = new Set(Object.keys(activeStreams));
+    for (const [threadId, cleanup] of listenersRef.current) {
+      if (!streamingThreadIds.has(threadId)) {
+        cleanup();
+        listenersRef.current.delete(threadId);
       }
-    );
-    const unsubActivity = electronAPI.on(
-      `chat:activity:${listenerThreadId}`,
-      (...args) => {
-        const payload = args[0];
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        addStreamActivity(payload.activity);
-      }
-    );
-    const unsubComplete = electronAPI.on(
-      `chat:complete:${listenerThreadId}`,
-      (...args) => {
-        const payload = args[0];
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        console.log("[chat:complete]", payload.text.length, "chars,", payload.durationMs, "ms");
-        fetchMessages(listenerThreadId);
-        setIsStreaming(false);
-        clearStream();
-      }
-    );
-    const unsubError = electronAPI.on(
-      `chat:error:${listenerThreadId}`,
-      (...args) => {
-        const payload = args[0];
-        console.error("[chat:error]", payload.message);
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        setStreamingError(payload.message);
-      }
-    );
-    const unsubToolApproval = electronAPI.on(
-      `chat:tool-approval:${listenerThreadId}`,
-      (...args) => {
-        const payload = args[0];
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        useAppStore.getState().setPendingToolApproval({
-          runId: payload.runId,
-          tool: payload.tool,
-          args: payload.args,
-          description: payload.description
-        });
-      }
-    );
-    const unsubDone = electronAPI.on(
-      `chat:done:${listenerThreadId}`,
-      (...args) => {
-        const payload = args[0];
-        console.log("[chat:done] runId:", payload.runId);
-        if (payload.runId !== useAppStore.getState().activeRunId) return;
-        const hadError = useAppStore.getState().streamingError;
-        setIsStreaming(false);
-        if (!hadError) {
-          clearStream();
-          const next = useAppStore.getState().dequeueMessage();
-          if (next) {
-            setTimeout(async () => {
-              try {
-                await electronAPI.invoke("thread:update", {
-                  id: next.threadId,
-                  provider: next.provider,
-                  model: next.model,
-                  effort: next.effort,
-                  approvalMode: next.approvalMode
-                });
-              } catch (err) {
-                console.error("Erro ao sincronizar thread para mensagem enfileirada:", err);
-              }
-              sendMessageRef.current?.(next.content);
-            }, 50);
-          }
-        } else {
-          useAppStore.setState({
-            activeRunId: null,
-            streamingThreadId: null,
-            streamingContent: ""
+    }
+    for (const threadId of streamingThreadIds) {
+      if (listenersRef.current.has(threadId)) continue;
+      const unsubStream = electronAPI.on(
+        `chat:stream:${threadId}`,
+        (...args) => {
+          const payload = args[0];
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          addStreamContent(threadId, payload.text);
+        }
+      );
+      const unsubActivity = electronAPI.on(
+        `chat:activity:${threadId}`,
+        (...args) => {
+          const payload = args[0];
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          addStreamActivity(threadId, payload.activity);
+        }
+      );
+      const unsubComplete = electronAPI.on(
+        `chat:complete:${threadId}`,
+        (...args) => {
+          const payload = args[0];
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          console.log("[chat:complete]", threadId, payload.text.length, "chars,", payload.durationMs, "ms");
+          fetchMessages(threadId);
+          endStream(threadId);
+        }
+      );
+      const unsubError = electronAPI.on(
+        `chat:error:${threadId}`,
+        (...args) => {
+          const payload = args[0];
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          console.error("[chat:error]", threadId, payload.message);
+          setStreamError(threadId, payload.message);
+        }
+      );
+      const unsubToolApproval = electronAPI.on(
+        `chat:tool-approval:${threadId}`,
+        (...args) => {
+          const payload = args[0];
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          setThreadToolApproval(threadId, {
+            runId: payload.runId,
+            tool: payload.tool,
+            args: payload.args,
+            description: payload.description
           });
         }
-      }
-    );
+      );
+      const unsubDone = electronAPI.on(
+        `chat:done:${threadId}`,
+        (...args) => {
+          const payload = args[0];
+          console.log("[chat:done] threadId:", threadId, "runId:", payload.runId);
+          const currentStream = useAppStore.getState().activeStreams[threadId];
+          if (!currentStream || payload.runId !== currentStream.runId) return;
+          const hadError = currentStream.error;
+          if (!hadError) {
+            const next = useAppStore.getState().dequeueMessage();
+            if (next && next.threadId === threadId) {
+              setTimeout(async () => {
+                try {
+                  await electronAPI.invoke("thread:update", {
+                    id: next.threadId,
+                    provider: next.provider,
+                    model: next.model,
+                    effort: next.effort,
+                    approvalMode: next.approvalMode
+                  });
+                } catch (err) {
+                  console.error("Erro ao sincronizar thread para mensagem enfileirada:", err);
+                }
+                sendMessageRef.current?.(next.threadId, next.content, {
+                  provider: next.provider,
+                  model: next.model
+                });
+              }, 50);
+            }
+          }
+          endStream(threadId);
+        }
+      );
+      const cleanup = () => {
+        unsubStream();
+        unsubActivity();
+        unsubComplete();
+        unsubError();
+        unsubToolApproval();
+        unsubDone();
+      };
+      listenersRef.current.set(threadId, cleanup);
+    }
+    const listeners = listenersRef.current;
     return () => {
-      unsubStream();
-      unsubActivity();
-      unsubComplete();
-      unsubError();
-      unsubToolApproval();
-      unsubDone();
+      for (const [, cleanup] of listeners) {
+        cleanup();
+      }
+      listeners.clear();
     };
-  }, [
-    activeThreadId,
-    streamingThreadId,
-    setActiveRunId,
-    setIsStreaming,
-    setStreamingError,
-    fetchMessages,
-    clearStream,
-    addStreamContent,
-    addStreamActivity
-  ]);
-  const sendMessageRef = reactExports.useRef(null);
+  }, [activeStreams, addStreamContent, addStreamActivity, setStreamError, endStream, fetchMessages, setThreadToolApproval]);
+  return sendMessageRef;
+}
+function useChat() {
+  const activeThreadId = useAppStore((s15) => s15.activeThreadId);
+  const activeStreams = useAppStore((s15) => s15.activeStreams);
+  const { startStream, addOptimisticMessage, setStreamError, endStream } = useAppStore();
+  const sendMessageRef = useStreamListeners();
+  const threadStream = activeThreadId ? activeStreams[activeThreadId] ?? null : null;
+  const isStreaming = threadStream !== null;
+  const streamingContent = threadStream?.content ?? "";
+  const streamingError = threadStream?.error ?? null;
   const sendMessage = reactExports.useCallback(
-    async (content2) => {
+    async (content2, config) => {
       if (!activeThreadId || !content2.trim()) return;
       addOptimisticMessage({
         id: `temp-${Date.now()}`,
@@ -24641,10 +24755,7 @@ function useChat() {
       });
       const runId = crypto.randomUUID();
       console.log("[sendMessage] threadId:", activeThreadId, "runId:", runId);
-      clearStream();
-      setStreamingThreadId(activeThreadId);
-      setActiveRunId(runId);
-      setIsStreaming(true);
+      startStream(activeThreadId, runId, config);
       try {
         await electronAPI.invoke("message:send", {
           threadId: activeThreadId,
@@ -24653,25 +24764,42 @@ function useChat() {
         });
       } catch (err) {
         console.error("Erro ao enviar mensagem:", err);
-        setStreamingError(String(err));
-        setIsStreaming(false);
-        setStreamingThreadId(null);
-        setActiveRunId(null);
+        setStreamError(activeThreadId, String(err));
+        endStream(activeThreadId);
       }
     },
-    [
-      activeThreadId,
-      addOptimisticMessage,
-      clearStream,
-      setStreamingThreadId,
-      setActiveRunId,
-      setIsStreaming,
-      setStreamingError
-    ]
+    [activeThreadId, addOptimisticMessage, startStream, setStreamError, endStream]
+  );
+  const sendMessageForThread = reactExports.useCallback(
+    async (threadId, content2, config) => {
+      if (!threadId || !content2.trim()) return;
+      addOptimisticMessage({
+        id: `temp-${Date.now()}`,
+        threadId,
+        role: "user",
+        content: content2.trim(),
+        metadata: null,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      const runId = crypto.randomUUID();
+      startStream(threadId, runId, config);
+      try {
+        await electronAPI.invoke("message:send", {
+          threadId,
+          content: content2.trim(),
+          runId
+        });
+      } catch (err) {
+        console.error("Erro ao enviar mensagem:", err);
+        setStreamError(threadId, String(err));
+        endStream(threadId);
+      }
+    },
+    [addOptimisticMessage, startStream, setStreamError, endStream]
   );
   reactExports.useEffect(() => {
-    sendMessageRef.current = sendMessage;
-  }, [sendMessage]);
+    sendMessageRef.current = sendMessageForThread;
+  }, [sendMessageForThread, sendMessageRef]);
   const stopGeneration = reactExports.useCallback(async () => {
     if (!activeThreadId) return;
     try {
@@ -37369,6 +37497,92 @@ function isLikelyChoiceQuestion(questionText, options) {
   const normalized = questionText.toLowerCase();
   return normalized.includes("?") || normalized.includes("escolh") || normalized.includes("opcao") || normalized.includes("opção") || normalized.includes("qual") || normalized.includes("choose") || normalized.includes("which") || normalized.includes("select");
 }
+function AskUserPicker({ payload, onAnswer, isLatest }) {
+  const [answered, setAnswered] = reactExports.useState(false);
+  const [pickedByQuestion, setPickedByQuestion] = reactExports.useState({});
+  if (!payload?.questions?.length) return null;
+  const pickSingle = (_qi, oi2, q2) => {
+    if (answered) return;
+    setAnswered(true);
+    const label = q2.options[oi2]?.label ?? "";
+    onAnswer(label);
+  };
+  const toggleMulti = (qi2, oi2) => {
+    setPickedByQuestion((prev) => {
+      const set = new Set(prev[qi2] ?? []);
+      if (set.has(oi2)) set.delete(oi2);
+      else set.add(oi2);
+      return { ...prev, [qi2]: set };
+    });
+  };
+  const submitMulti = () => {
+    if (answered) return;
+    const parts = [];
+    payload.questions.forEach((q2, qi2) => {
+      const picks = pickedByQuestion[qi2];
+      if (!picks || picks.size === 0) return;
+      const labels = [...picks].map((oi2) => q2.options[oi2]?.label).filter(Boolean);
+      parts.push(`${q2.question} → ${labels.join(", ")}`);
+    });
+    if (parts.length === 0) return;
+    setAnswered(true);
+    onAnswer(parts.join("\n"));
+  };
+  const hasMultiSelect = payload.questions.some((q2) => q2.multiSelect);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-xl border border-border/60 bg-card/70 p-4 shadow-sm", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(MessageCircleQuestionMark, { className: "h-3.5 w-3.5 text-blue-400" }),
+      "Selecione uma resposta"
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-4", children: payload.questions.map((q2, qi2) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+      q2.header && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "inline-block rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground", children: q2.header }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-sm font-medium text-foreground", children: q2.question }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid gap-1.5", children: q2.options.map((opt, oi2) => {
+        const isPicked = pickedByQuestion[qi2]?.has(oi2) ?? false;
+        return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            type: "button",
+            disabled: answered || !isLatest,
+            onClick: () => q2.multiSelect ? toggleMulti(qi2, oi2) : pickSingle(qi2, oi2, q2),
+            className: `group flex items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-all
+                      ${isPicked ? "border-emerald-500/50 bg-emerald-500/10" : "border-border/60 bg-background/40 hover:border-blue-500/40 hover:bg-blue-500/5"}
+                      disabled:cursor-not-allowed disabled:opacity-50`,
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "span",
+                {
+                  className: `mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded ${q2.multiSelect ? "rounded-sm border-2" : "rounded-full border"} ${isPicked ? "border-emerald-500 bg-emerald-500 text-white" : "border-muted-foreground/40 text-transparent"}`,
+                  children: [
+                    isPicked && /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "h-3 w-3" }),
+                    !isPicked && !q2.multiSelect && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-muted-foreground/70", children: oi2 + 1 })
+                  ]
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex-1 min-w-0", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "block text-foreground/95", children: opt.label }),
+                opt.description && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mt-0.5 block text-[11px] text-muted-foreground/70", children: opt.description })
+              ] })
+            ]
+          },
+          oi2
+        );
+      }) })
+    ] }, qi2)) }),
+    hasMultiSelect && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3 flex justify-end", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "button",
+      {
+        type: "button",
+        disabled: answered || !isLatest,
+        onClick: submitMulti,
+        className: "rounded-md bg-blue-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50",
+        children: "Enviar resposta"
+      }
+    ) }),
+    answered && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3 text-[11px] text-muted-foreground", children: "Resposta enviada." }),
+    !isLatest && !answered && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3 text-[11px] text-muted-foreground", children: "Pergunta antiga — responda na nova mensagem." })
+  ] });
+}
 function formatElapsed(seconds) {
   const safe = Math.max(0, Math.floor(seconds));
   if (safe < 60) return `${safe}s`;
@@ -37416,6 +37630,7 @@ function MessageBubble({
   const parsed = isLastAssistant ? parseOptions(message.content) : null;
   let durationSeconds = null;
   let thinkingContent = null;
+  let savedActivities = [];
   if (message.metadata) {
     try {
       const meta = JSON.parse(message.metadata);
@@ -37424,6 +37639,9 @@ function MessageBubble({
       }
       if (typeof meta.thinking === "string") {
         thinkingContent = meta.thinking;
+      }
+      if (Array.isArray(meta.activities)) {
+        savedActivities = meta.activities;
       }
     } catch {
     }
@@ -37438,6 +37656,15 @@ function MessageBubble({
       ] })
     ] }),
     thinkingContent && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-3 ml-7", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ThinkingCard, { summary: thinkingContent }) }),
+    savedActivities.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-3 ml-7 flex w-[calc(100%-1.75rem)] flex-col gap-2", children: savedActivities.map((act, i) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+      ActivityItem,
+      {
+        activity: act,
+        isLatest: isLastAssistant && i === savedActivities.length - 1,
+        onAnswer: (text2) => onSendMessage?.(text2)
+      },
+      i
+    )) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: proseClasses, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Markdown, { remarkPlugins: [remarkGfm], children: parsed ? parsed.questionText : message.content }) }),
     parsed && onSendMessage && /* @__PURE__ */ jsxRuntimeExports.jsx(OptionButtons, { options: parsed.options, onSelect: handleOptionSelect })
   ] });
@@ -37446,7 +37673,8 @@ function StreamingBubble({
   content: content2,
   elapsedSeconds,
   model,
-  activities = []
+  activities = [],
+  onAnswer
 }) {
   const latestActivity = activities[activities.length - 1];
   const statusTitle = content2 ? "Respondendo" : latestActivity ? "Processando" : "Analisando";
@@ -37473,7 +37701,8 @@ function StreamingBubble({
       {
         activity: act,
         isLatest: i === activities.length - 1,
-        elapsedSeconds
+        elapsedSeconds,
+        onAnswer
       },
       i
     )) }),
@@ -37542,7 +37771,8 @@ function ThinkingCard({
 function ActivityItem({
   activity,
   isLatest,
-  elapsedSeconds
+  elapsedSeconds,
+  onAnswer
 }) {
   const [expanded, setExpanded] = reactExports.useState(false);
   if (activity.kind === "thinking") {
@@ -37552,6 +37782,17 @@ function ActivityItem({
         summary: activity.summary,
         isLatest,
         elapsedSeconds
+      }
+    );
+  }
+  if (activity.kind === "ask_user" && activity.data) {
+    const payload = activity.data;
+    return /* @__PURE__ */ jsxRuntimeExports.jsx(
+      AskUserPicker,
+      {
+        payload,
+        isLatest,
+        onAnswer: (text2) => onAnswer?.(text2)
       }
     );
   }
@@ -37582,12 +37823,13 @@ function ActivityItem({
     }
   );
 }
-const EFFORTS$1 = [
+const EFFORTS = [
   { label: "Low", value: "low" },
   { label: "Medium", value: "medium" },
   { label: "High", value: "high" }
 ];
-const APPROVAL_MODES$1 = [
+const APPROVAL_MODES = [
+  { label: "Sem tools", value: "no-tools" },
   { label: "Suggest", value: "suggest" },
   { label: "Auto-edit", value: "auto-edit" },
   { label: "Full auto", value: "full-auto" }
@@ -37671,8 +37913,8 @@ function ChatInput({
   }, [images]);
   const selectedProvider = providers.find((p) => p.value === provider) || providers[0] || { label: "Provider" };
   const selectedModel = models.find((m) => m.value === model) || models[0] || { label: model || "Modelo" };
-  const selectedEffort = EFFORTS$1.find((e) => e.value === effort) || EFFORTS$1[1];
-  const selectedApproval = APPROVAL_MODES$1.find((a) => a.value === approvalMode) || APPROVAL_MODES$1[0];
+  const selectedEffort = EFFORTS.find((e) => e.value === effort) || EFFORTS[1];
+  const selectedApproval = APPROVAL_MODES.find((a) => a.value === approvalMode) || APPROVAL_MODES[0];
   return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-t border-border/30 bg-background p-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mx-auto max-w-3xl", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
@@ -37746,7 +37988,7 @@ function ChatInput({
               InlineDropdown,
               {
                 label: selectedEffort.label,
-                items: EFFORTS$1,
+                items: EFFORTS,
                 value: effort,
                 onChange: onEffortChange
               }
@@ -37755,7 +37997,7 @@ function ChatInput({
               InlineDropdown,
               {
                 label: selectedApproval.label,
-                items: APPROVAL_MODES$1,
+                items: APPROVAL_MODES,
                 value: approvalMode,
                 onChange: (v2) => onApprovalModeChange(v2)
               }
@@ -37872,64 +38114,114 @@ function MessageQueue({ queue, onSteer, onRemove }) {
     i
   )) }) });
 }
-const TOOL_ICONS = {
-  create_file: "📄",
-  edit_file: "✏️",
-  delete_file: "🗑️",
-  rename_file: "📝",
-  create_directory: "📁",
-  run_command: "⚡"
+const TOOL_META = {
+  read_file: { icon: FileText, label: "Ler arquivo", accent: "text-sky-400" },
+  write_file: { icon: FilePlus, label: "Criar arquivo", accent: "text-emerald-400" },
+  edit_file: { icon: Pencil, label: "Editar arquivo", accent: "text-amber-400" },
+  delete_file: { icon: Trash2, label: "Apagar arquivo", accent: "text-red-400" },
+  rename_file: { icon: FileText, label: "Renomear arquivo", accent: "text-violet-400" },
+  create_directory: { icon: FolderPlus, label: "Criar diretório", accent: "text-emerald-400" },
+  list_files: { icon: FolderOpen, label: "Listar arquivos", accent: "text-sky-400" },
+  glob: { icon: Search, label: "Buscar arquivos", accent: "text-sky-400" },
+  grep: { icon: FileSearch, label: "Buscar texto", accent: "text-sky-400" },
+  bash: { icon: Terminal, label: "Executar comando", accent: "text-orange-400" },
+  ask_user: { icon: MessageCircleQuestionMark, label: "Pergunta ao usuário", accent: "text-blue-400" },
+  todo_write: { icon: ListChecks, label: "Atualizar tarefas", accent: "text-emerald-400" }
 };
+const LONG_FIELDS = /* @__PURE__ */ new Set(["content", "old_content", "new_content", "command"]);
+function formatValue(key, value) {
+  if (typeof value === "string") return value;
+  return JSON.stringify(value, null, LONG_FIELDS.has(key) ? 2 : 0);
+}
 function ToolApprovalCard() {
-  const pendingToolApproval = useAppStore((s15) => s15.pendingToolApproval);
+  const activeThreadId = useAppStore((s15) => s15.activeThreadId);
+  const activeStreams = useAppStore((s15) => s15.activeStreams);
   const respondToolApproval = useAppStore((s15) => s15.respondToolApproval);
-  if (!pendingToolApproval) return null;
-  const icon = TOOL_ICONS[pendingToolApproval.tool] ?? "🔧";
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mx-auto max-w-2xl px-4 py-2", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-4", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 mb-3", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Shield, { className: "h-4 w-4 text-yellow-500" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-medium text-yellow-500 uppercase tracking-wide", children: "Aprovação necessária" })
+  const pending = activeThreadId ? activeStreams[activeThreadId]?.pendingToolApproval ?? null : null;
+  if (!pending || !activeThreadId) return null;
+  const meta = TOOL_META[pending.tool] ?? {
+    icon: ShieldAlert,
+    label: pending.tool,
+    accent: "text-yellow-400"
+  };
+  const Icon2 = meta.icon;
+  const target = pending.args?.path ?? pending.args?.file_path ?? pending.args?.pattern ?? pending.args?.command ?? null;
+  const args = pending.args ?? {};
+  const summaryEntries = [];
+  const detailEntries = [];
+  for (const [k, v2] of Object.entries(args)) {
+    const strVal = typeof v2 === "string" ? v2 : JSON.stringify(v2);
+    if (LONG_FIELDS.has(k) || strVal.length > 120) detailEntries.push([k, v2]);
+    else summaryEntries.push([k, v2]);
+  }
+  const handleApprove = () => respondToolApproval(activeThreadId, true);
+  const handleReject = () => respondToolApproval(activeThreadId, false);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mx-auto w-full max-w-2xl px-4 py-3", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "overflow-hidden rounded-xl border border-border/60 bg-card shadow-lg shadow-black/20 backdrop-blur", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 border-b border-border/60 bg-muted/30 px-4 py-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `flex h-9 w-9 items-center justify-center rounded-lg bg-background ${meta.accent}`, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Icon2, { className: "h-4 w-4" }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 min-w-0", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground", children: "Aprovação necessária" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[10px] rounded bg-background px-1.5 py-0.5 text-muted-foreground", children: pending.tool })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "truncate text-sm font-medium text-foreground", children: [
+          meta.label,
+          target ? /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "ml-1.5 text-muted-foreground", children: [
+            "— ",
+            target
+          ] }) : null
+        ] })
+      ] })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-3", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-sm text-foreground", children: [
-      icon,
-      " ",
-      pendingToolApproval.description
-    ] }) }),
-    pendingToolApproval.args && Object.keys(pendingToolApproval.args).length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-3 rounded bg-secondary/50 p-2 text-xs font-mono text-muted-foreground overflow-x-auto", children: Object.entries(pendingToolApproval.args).map(([key, value]) => {
-      const strValue = typeof value === "string" ? value : JSON.stringify(value);
-      const truncated = strValue.length > 200 ? `${strValue.slice(0, 200)}...` : strValue;
-      return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-1 last:mb-0", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-foreground/60", children: [
-          key,
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3 px-4 py-3", children: [
+      summaryEntries.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-wrap gap-x-4 gap-y-1 text-xs", children: summaryEntries.map(([k, v2]) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1.5", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-muted-foreground", children: [
+          k,
           ":"
         ] }),
-        " ",
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground/80", children: truncated })
-      ] }, key);
-    }) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(
-        "button",
-        {
-          onClick: () => respondToolApproval(true),
-          className: "flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors",
-          children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "h-3 w-3" }),
-            "Aprovar"
-          ]
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(
-        "button",
-        {
-          onClick: () => respondToolApproval(false),
-          className: "flex items-center gap-1.5 rounded-md bg-red-600/80 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 transition-colors",
-          children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(X$1, { className: "h-3 w-3" }),
-            "Rejeitar"
-          ]
-        }
-      )
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-mono text-foreground/90", children: formatValue(k, v2) })
+      ] }, k)) }),
+      detailEntries.map(([k, v2]) => {
+        const str = typeof v2 === "string" ? v2 : JSON.stringify(v2, null, 2);
+        const preview = str.length > 600 ? `${str.slice(0, 600)}
+…` : str;
+        const isDiffField = k === "old_content" || k === "new_content";
+        const tone = isDiffField ? k === "old_content" ? "border-red-500/20 bg-red-500/5" : "border-emerald-500/20 bg-emerald-500/5" : "border-border/60 bg-muted/30";
+        return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `rounded-md border ${tone} p-2.5`, children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground", children: k }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("pre", { className: "max-h-48 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-foreground/85", children: preview })
+        ] }, k);
+      })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between gap-2 border-t border-border/60 bg-muted/20 px-4 py-2.5", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[11px] text-muted-foreground", children: target ? "Aprovação válida para este alvo nesta conversa." : "Aprovação válida para esta ferramenta nesta conversa." }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            type: "button",
+            onClick: handleReject,
+            className: "inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground/90 transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(X$1, { className: "h-3.5 w-3.5" }),
+              "Rejeitar"
+            ]
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            type: "button",
+            onClick: handleApprove,
+            autoFocus: true,
+            className: "inline-flex items-center gap-1.5 rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "h-3.5 w-3.5" }),
+              "Aprovar"
+            ]
+          }
+        )
+      ] })
     ] })
   ] }) });
 }
@@ -38014,7 +38306,7 @@ function ThreadLogsPanel({
     };
   }, [fetchLogs, threadId]);
   const totalEntries = logs.reduce((sum, l) => sum + l.entries.length, 0);
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full flex-col border-l border-border/30 bg-background w-[420px]", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full min-h-0 flex-col border-l border-border/30 bg-background w-[420px]", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between border-b border-border/30 px-4 py-2.5", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-sm font-medium", children: "Logs" }),
@@ -38044,7 +38336,7 @@ function ThreadLogsPanel({
         )
       ] })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs(ScrollArea, { className: "flex-1", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 min-h-0 overflow-y-auto", children: [
       loading && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center justify-center py-12 text-sm text-muted-foreground", children: "Carregando..." }),
       !loading && logs.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex items-center justify-center py-12 text-sm text-muted-foreground/50", children: "Sem logs para esta thread" }),
       logs.map((log) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "border-b border-border/40", children: [
@@ -38058,6 +38350,17 @@ function ThreadLogsPanel({
     ] })
   ] });
 }
+function getAssistantMessageModel(metadata, fallback) {
+  if (!metadata) return fallback;
+  try {
+    const parsed = JSON.parse(metadata);
+    if (typeof parsed.model === "string" && parsed.model.trim()) {
+      return parsed.model;
+    }
+  } catch {
+  }
+  return fallback;
+}
 function ChatArea() {
   const {
     projects,
@@ -38065,29 +38368,30 @@ function ChatArea() {
     messages,
     activeProjectId,
     activeThreadId,
-    streamingStartedAt,
-    streamingThreadId,
+    activeStreams,
     providerCatalog,
     sidebarOpen,
     setSidebarOpen,
-    streamingActivities,
     terminalPanelOpen,
     terminalProjectPath,
     messageQueue,
     enqueueMessage,
-    removeQueuedMessage
+    removeQueuedMessage,
+    filePanelOpen,
+    setFilePanelOpen,
+    setTerminalPanelOpen,
+    openTerminalPanel
   } = useAppStore();
   const {
     sendMessage,
     stopGeneration,
-    isStreaming,
     streamingContent,
     streamingError
   } = useChat();
-  const [provider, setProvider] = reactExports.useState("openai");
+  const [provider, setProvider] = reactExports.useState("lm-studio");
   const [model, setModel] = reactExports.useState("gpt-5.1-codex-mini");
   const [effort, setEffort] = reactExports.useState("medium");
-  const [approvalMode, setApprovalMode] = reactExports.useState("suggest");
+  const [approvalMode, setApprovalMode] = reactExports.useState("no-tools");
   const [apiKeyConfigured, setApiKeyConfigured] = reactExports.useState(null);
   const [streamClock, setStreamClock] = reactExports.useState(() => Date.now());
   const [logsPanelOpen, setLogsPanelOpen] = reactExports.useState(false);
@@ -38095,8 +38399,11 @@ function ChatArea() {
   const [gitCurrentBranch, setGitCurrentBranch] = reactExports.useState(null);
   const [gitBranches, setGitBranches] = reactExports.useState([]);
   const [gitIsRepo, setGitIsRepo] = reactExports.useState(false);
-  const isStreamingThisThread = isStreaming && streamingThreadId === activeThreadId;
-  const streamElapsedSeconds = isStreamingThisThread && streamingStartedAt ? Math.floor((streamClock - streamingStartedAt) / 1e3) : 0;
+  const [installedEditors, setInstalledEditors] = reactExports.useState([]);
+  const threadStream = activeThreadId ? activeStreams[activeThreadId] ?? null : null;
+  const isStreamingThisThread = threadStream !== null;
+  const streamingActivities = threadStream?.activities ?? [];
+  const streamElapsedSeconds = isStreamingThisThread && threadStream ? Math.floor((streamClock - threadStream.startedAt) / 1e3) : 0;
   const messagesEndRef = reactExports.useRef(null);
   const scrollAreaRef = reactExports.useRef(null);
   const activeProject = projects.find((p) => p.id === activeProjectId);
@@ -38110,6 +38417,22 @@ function ChatArea() {
     value: item.id
   }));
   const modelOptions = providerInfo.models;
+  const preferredCodeEditor = useSettingsStore((s15) => s15.preferredCodeEditor);
+  const setPreferredCodeEditor = useSettingsStore((s15) => s15.setPreferredCodeEditor);
+  const hasInstalledEditor = installedEditors.length > 0;
+  reactExports.useEffect(() => {
+    electronAPI.invoke("shell:list-installed-editors").then((result) => {
+      const list2 = Array.isArray(result) ? result : [];
+      setInstalledEditors(list2);
+    }).catch(() => setInstalledEditors([]));
+  }, []);
+  reactExports.useEffect(() => {
+    if (!installedEditors.length) return;
+    const exists = installedEditors.some((item) => item.id === preferredCodeEditor);
+    if (!exists) {
+      setPreferredCodeEditor(installedEditors[0].id);
+    }
+  }, [installedEditors, preferredCodeEditor, setPreferredCodeEditor]);
   const scrollToBottom = reactExports.useCallback((behavior = "auto") => {
     const viewport = scrollAreaRef.current?.querySelector(
       '[data-slot="scroll-area-viewport"]'
@@ -38134,24 +38457,20 @@ function ChatArea() {
     scrollToBottom("smooth");
   }, [activeMessages.length, streamingContent, scrollToBottom]);
   reactExports.useEffect(() => {
-    if (!isStreamingThisThread || !streamingStartedAt) return;
+    if (!isStreamingThisThread) return;
     const timer = window.setInterval(() => setStreamClock(Date.now()), 1e3);
     return () => window.clearInterval(timer);
-  }, [isStreamingThisThread, streamingStartedAt]);
+  }, [isStreamingThisThread]);
   reactExports.useEffect(() => {
     if (activeThread) {
-      setProvider(activeThread.provider || "openai");
+      setProvider(activeThread.provider || "lm-studio");
       setModel(activeThread.model);
       setEffort(activeThread.effort || "medium");
-      setApprovalMode(activeThread.approvalMode || "suggest");
+      setApprovalMode(activeThread.approvalMode || "no-tools");
     }
   }, [activeThread]);
   reactExports.useEffect(() => {
-    setApiKeyConfigured(null);
-    electronAPI.invoke("provider:api-key-status", { provider }).then((status) => {
-      const s15 = status;
-      setApiKeyConfigured(s15.configured);
-    }).catch(() => setApiKeyConfigured(false));
+    setApiKeyConfigured(true);
   }, [provider]);
   const handleProviderChange = reactExports.useCallback(
     async (newProvider) => {
@@ -38239,7 +38558,7 @@ function ChatArea() {
       } catch (err) {
         console.error("Erro ao sincronizar thread:", err);
       }
-      sendMessage(content2);
+      sendMessage(content2, { provider, model });
     },
     [activeThreadId, model, provider, effort, approvalMode, sendMessage, apiKeyConfigured]
   );
@@ -38315,6 +38634,33 @@ function ChatArea() {
     },
     [activeThreadId, gitSwitching, refreshGitSummary]
   );
+  const handleOpenThreadInEditor = reactExports.useCallback(
+    async (editorOverride) => {
+      if (!activeProject || !activeThreadId || !hasInstalledEditor) return;
+      const targetEditor = editorOverride ?? preferredCodeEditor;
+      try {
+        const summary = await electronAPI.invoke("git:summary-for-thread", {
+          threadId: activeThreadId
+        });
+        const resolvedPath = summary?.resolvedPath || activeProject.path;
+        await electronAPI.invoke("shell:open-in-editor", {
+          path: resolvedPath,
+          editor: targetEditor
+        });
+      } catch (err) {
+        console.error("Erro ao abrir diretorio da thread no editor:", err);
+      }
+    },
+    [activeProject, activeThreadId, preferredCodeEditor, hasInstalledEditor]
+  );
+  const handleEditorSelectChange = reactExports.useCallback(
+    async (value) => {
+      const nextEditor = value;
+      setPreferredCodeEditor(nextEditor);
+      await handleOpenThreadInEditor(nextEditor);
+    },
+    [setPreferredCodeEditor, handleOpenThreadInEditor]
+  );
   if (!activeThreadId) {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-1 flex-col bg-background", children: [
       !sidebarOpen && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-4 pt-3", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -38350,15 +38696,38 @@ function ChatArea() {
           /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "truncate text-sm font-medium text-foreground", children: activeThread?.title || "Conversa" }),
           activeProject && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "truncate text-xs text-muted-foreground/50", children: activeProject.name })
         ] }),
-        activeProject && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1", children: [
+        activeProject && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+          hasInstalledEditor && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              HeaderButton,
+              {
+                icon: /* @__PURE__ */ jsxRuntimeExports.jsx(CodeXml, { className: "size-4" }),
+                tooltip: "Abrir diretorio da thread no editor",
+                onClick: () => handleOpenThreadInEditor()
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "sr-only", htmlFor: "code-editor-select", children: "Editor de codigo" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "select",
+              {
+                id: "code-editor-select",
+                value: preferredCodeEditor,
+                onChange: (e) => handleEditorSelectChange(e.target.value),
+                className: "h-7 rounded-md border border-border/50 bg-muted/50 px-2 text-xs text-foreground outline-none transition-colors hover:border-border focus:border-border",
+                title: "Selecionar editor de codigo",
+                children: installedEditors.map((editor) => /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: editor.id, children: editor.label }, editor.id))
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "h-4 w-px bg-border/60" }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             HeaderButton,
             {
               icon: /* @__PURE__ */ jsxRuntimeExports.jsx(FolderOpen, { className: "size-4" }),
-              tooltip: "Arquivos do projeto",
+              tooltip: filePanelOpen ? "Fechar explorador de arquivos" : "Explorar arquivos do projeto",
+              active: filePanelOpen,
               onClick: () => {
-                const { filePanelOpen, setFilePanelOpen } = useAppStore.getState();
-                if (logsPanelOpen) {
+                if (!filePanelOpen && logsPanelOpen) {
                   setLogsPanelOpen(false);
                 }
                 setFilePanelOpen(!filePanelOpen);
@@ -38369,10 +38738,14 @@ function ChatArea() {
             HeaderButton,
             {
               icon: /* @__PURE__ */ jsxRuntimeExports.jsx(Terminal, { className: "size-4" }),
-              tooltip: "Terminal",
+              tooltip: isTerminalActive ? "Fechar terminal" : "Terminal",
               active: isTerminalActive,
               onClick: () => {
-                useAppStore.getState().openTerminalPanel(activeProject.path);
+                if (isTerminalActive) {
+                  setTerminalPanelOpen(false);
+                } else {
+                  openTerminalPanel(activeProject.path);
+                }
               }
             }
           ),
@@ -38380,9 +38753,9 @@ function ChatArea() {
             HeaderButton,
             {
               icon: /* @__PURE__ */ jsxRuntimeExports.jsx(Globe, { className: "size-4" }),
-              tooltip: "Preview no browser",
+              tooltip: "Preview no browser (indisponivel)",
+              disabled: true,
               onClick: () => {
-                electronAPI.invoke("shell:open-url", { url: "http://localhost:3000" });
               }
             }
           ),
@@ -38393,9 +38766,9 @@ function ChatArea() {
               tooltip: "Logs da thread",
               active: logsPanelOpen,
               onClick: () => {
-                const { filePanelOpen, setFilePanelOpen } = useAppStore.getState();
-                if (!logsPanelOpen && filePanelOpen) {
-                  setFilePanelOpen(false);
+                const { filePanelOpen: filePanelOpen2, setFilePanelOpen: setFilePanelOpen2 } = useAppStore.getState();
+                if (!logsPanelOpen && filePanelOpen2) {
+                  setFilePanelOpen2(false);
                 }
                 setLogsPanelOpen(!logsPanelOpen);
               }
@@ -38415,7 +38788,7 @@ function ChatArea() {
             {
               message: msg,
               provider: activeThread?.provider,
-              model: activeThread?.model,
+              model: msg.role === "assistant" ? getAssistantMessageModel(msg.metadata, activeThread?.model) : void 0,
               onSendMessage: handleSend,
               isLastAssistant
             },
@@ -38427,9 +38800,10 @@ function ChatArea() {
           {
             content: streamingContent,
             elapsedSeconds: streamElapsedSeconds,
-            provider,
-            model,
-            activities: streamingActivities
+            provider: threadStream?.provider ?? provider,
+            model: threadStream?.model ?? model,
+            activities: streamingActivities,
+            onAnswer: handleSend
           }
         ),
         streamingError && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mx-4 my-3 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3", children: [
@@ -38452,16 +38826,6 @@ function ChatArea() {
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(ToolApprovalCard, {}),
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { ref: messagesEndRef })
-      ] }) }),
-      apiKeyConfigured === false && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mx-auto max-w-3xl w-full px-6", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 mb-2", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(KeyRound, { className: "size-4 text-amber-500 shrink-0" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-amber-600 dark:text-amber-400", children: [
-          "API key do ",
-          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: providerInfo.label }),
-          " nao configurada. Va em ",
-          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "Settings > API Keys" }),
-          " para cadastrar."
-        ] })
       ] }) }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         MessageQueue,
@@ -38537,6 +38901,7 @@ function HeaderButton({
   icon,
   tooltip,
   active = false,
+  disabled = false,
   onClick
 }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -38545,7 +38910,8 @@ function HeaderButton({
       type: "button",
       title: tooltip,
       onClick,
-      className: `flex size-7 items-center justify-center rounded-md transition-colors ${active ? "bg-accent text-foreground ring-1 ring-border/60" : "text-muted-foreground/60 hover:bg-accent hover:text-foreground"}`,
+      disabled,
+      className: `flex size-7 items-center justify-center rounded-md transition-colors ${active ? "bg-accent text-foreground ring-1 ring-border/60" : "text-muted-foreground/60 hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"}`,
       children: icon
     }
   );
@@ -38560,7 +38926,7 @@ function StatusBar() {
   const activeThread = activeProjectId && activeThreadId ? (threads[activeProjectId] || []).find(
     (thread) => thread.id === activeThreadId
   ) : null;
-  const activeProvider = activeThread?.provider || "openai";
+  const activeProvider = activeThread?.provider || "lm-studio";
   const providerInfo = getProviderEntry(providerCatalog, activeProvider);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-4 border-t border-border/30 bg-background px-4 py-1 text-[11px] text-muted-foreground/60", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1.5", children: [
@@ -38574,45 +38940,40 @@ function StatusBar() {
   ] });
 }
 const NAV_ITEMS = [
-  { id: "appearance", label: "Appearance", icon: /* @__PURE__ */ jsxRuntimeExports.jsx(Palette, { className: "size-4" }) },
-  { id: "providers", label: "Providers", icon: /* @__PURE__ */ jsxRuntimeExports.jsx(Cpu, { className: "size-4" }) },
-  { id: "api-keys", label: "API Keys", icon: /* @__PURE__ */ jsxRuntimeExports.jsx(KeyRound, { className: "size-4" }) }
+  { id: "appearance", label: "Aparência", icon: /* @__PURE__ */ jsxRuntimeExports.jsx(Palette, { className: "size-4" }) },
+  { id: "providers", label: "Providers", icon: /* @__PURE__ */ jsxRuntimeExports.jsx(Cpu, { className: "size-4" }) }
 ];
-const EFFORTS = [
-  { label: "Low", value: "low" },
-  { label: "Medium", value: "medium" },
-  { label: "High", value: "high" }
+const PROVIDERS = [
+  { id: "lm-studio", label: "LM Studio", defaultBaseUrl: "http://127.0.0.1:1234" },
+  { id: "ollama", label: "Ollama", defaultBaseUrl: "http://localhost:11434" }
 ];
-const APPROVAL_MODES = [
-  { label: "Suggest", value: "suggest", description: "Only suggests changes, no execution" },
-  { label: "Auto-edit", value: "auto-edit", description: "Can edit files, asks for commands" },
-  { label: "Full auto", value: "full-auto", description: "Executes everything without asking" }
-];
-function SettingsScreen({ onBack }) {
-  const [activeSection, setActiveSection] = reactExports.useState("appearance");
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full w-full bg-background", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("aside", { className: "flex h-full w-[260px] shrink-0 flex-col border-r border-border/50 bg-sidebar-background", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-3 pt-4 pb-2", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+function SettingsScreen() {
+  const setActiveView = useAppStore((s15) => s15.setActiveView);
+  const theme = useSettingsStore((s15) => s15.theme);
+  const toggleTheme = useSettingsStore((s15) => s15.toggleTheme);
+  const [section, setSection] = reactExports.useState("appearance");
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("aside", { className: "flex w-56 flex-col border-r border-border/40 bg-background/40 px-2 py-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "button",
         {
           type: "button",
-          onClick: onBack,
-          className: "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
+          onClick: () => setActiveView("chat"),
+          className: "mb-3 flex items-center gap-2 rounded px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
           children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowLeft, { className: "size-4" }),
-            "Back to app"
+            /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowLeft, { className: "size-3.5" }),
+            "Voltar para chat"
           ]
         }
-      ) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-3 py-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "px-2 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider", children: "Settings" }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("nav", { className: "flex flex-col gap-0.5 px-2", children: NAV_ITEMS.map((item) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("nav", { className: "flex flex-col gap-0.5", children: NAV_ITEMS.map((item) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
         "button",
         {
           type: "button",
-          onClick: () => setActiveSection(item.id),
+          onClick: () => setSection(item.id),
           className: cn$1(
-            "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors text-left",
-            activeSection === item.id ? "bg-sidebar-accent text-foreground" : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+            "flex items-center gap-2 rounded px-2 py-1.5 text-sm transition-colors",
+            section === item.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           ),
           children: [
             item.icon,
@@ -38622,445 +38983,156 @@ function SettingsScreen({ onBack }) {
         item.id
       )) })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("main", { className: "flex-1 overflow-y-auto p-8", children: [
-      activeSection === "appearance" && /* @__PURE__ */ jsxRuntimeExports.jsx(AppearanceSection, {}),
-      activeSection === "providers" && /* @__PURE__ */ jsxRuntimeExports.jsx(ProvidersSection, {}),
-      activeSection === "api-keys" && /* @__PURE__ */ jsxRuntimeExports.jsx(ApiKeysSection, {})
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("main", { className: "flex-1 overflow-auto px-8 py-6", children: [
+      section === "appearance" && /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "max-w-xl space-y-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-semibold", children: "Aparência" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-lg border border-border/50 bg-card p-4", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-sm font-medium", children: "Tema" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-xs text-muted-foreground", children: theme === "dark" ? "Escuro" : "Claro" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              onClick: toggleTheme,
+              className: "rounded-md border border-border bg-background p-2 hover:bg-muted",
+              children: theme === "dark" ? /* @__PURE__ */ jsxRuntimeExports.jsx(Sun, { className: "size-4" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Moon, { className: "size-4" })
+            }
+          )
+        ] }) })
+      ] }),
+      section === "providers" && /* @__PURE__ */ jsxRuntimeExports.jsx(ProvidersSection, {})
     ] })
   ] });
 }
-function SectionTitle({ title }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "text-2xl font-semibold text-foreground mb-6", children: title });
-}
-function SettingsCard({ children }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-xl border border-border/60 bg-card divide-y divide-border/40", children });
-}
-function SettingsRow({
-  label,
-  description,
-  children
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-5 py-4 grid gap-3 md:grid-cols-[minmax(210px,260px)_1fr] md:items-center md:gap-6", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium text-foreground", children: label }),
-      description && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mt-0.5", children: description })
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "min-w-0", children })
-  ] });
-}
-function AppearanceSection() {
-  const { theme, setTheme } = useSettingsStore();
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-2xl", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(SectionTitle, { title: "Appearance" }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsCard, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsRow, { label: "Theme", description: "Choose between light and dark mode.", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        ThemeButton,
-        {
-          icon: /* @__PURE__ */ jsxRuntimeExports.jsx(Moon, { className: "size-3.5" }),
-          label: "Dark",
-          active: theme === "dark",
-          onClick: () => setTheme("dark")
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        ThemeButton,
-        {
-          icon: /* @__PURE__ */ jsxRuntimeExports.jsx(Sun, { className: "size-3.5" }),
-          label: "Light",
-          active: theme === "light",
-          onClick: () => setTheme("light")
-        }
-      )
-    ] }) }) })
-  ] });
-}
 function ProvidersSection() {
-  const providerCatalog = useAppStore((s15) => s15.providerCatalog);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "max-w-2xl space-y-4", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-lg font-semibold", children: "Providers" }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground", children: "Configure os endpoints dos servidores locais. As mudanças são salvas automaticamente." }),
+    PROVIDERS.map((p) => /* @__PURE__ */ jsxRuntimeExports.jsx(ProviderCard, { providerId: p.id, label: p.label, defaultBaseUrl: p.defaultBaseUrl }, p.id))
+  ] });
+}
+function ProviderCard({
+  providerId,
+  label,
+  defaultBaseUrl
+}) {
   const fetchProviderCatalog = useAppStore((s15) => s15.fetchProviderCatalog);
-  const {
-    defaultProvider,
-    defaultModels,
-    defaultEffort,
-    defaultApprovalMode,
-    setDefaultProvider,
-    setDefaultModel,
-    setDefaultEffort,
-    setDefaultApprovalMode
-  } = useSettingsStore();
-  const providerInfo = getProviderEntry(providerCatalog, defaultProvider);
-  const providerOptions = providerCatalog.map((entry) => ({
-    label: entry.label,
-    value: entry.id
-  }));
-  const configuredModel = defaultModels[defaultProvider] || providerInfo.default_model;
-  const hasConfiguredModel = providerInfo.models.some(
-    (item) => item.value === configuredModel
-  );
-  const defaultModel = hasConfiguredModel ? configuredModel : providerInfo.default_model;
-  const [lmStudioBaseUrl, setLmStudioBaseUrl] = reactExports.useState("");
-  const [lmStudioBusy, setLmStudioBusy] = reactExports.useState(false);
-  const [lmStudioStatus, setLmStudioStatus] = reactExports.useState(null);
+  const [baseUrl, setBaseUrl] = reactExports.useState("");
+  const [savedAt, setSavedAt] = reactExports.useState(null);
+  const [models, setModels] = reactExports.useState([]);
+  const [loading, setLoading] = reactExports.useState(false);
+  const [error, setError] = reactExports.useState(null);
+  const [lastChecked, setLastChecked] = reactExports.useState(null);
   reactExports.useEffect(() => {
-    if (defaultProvider !== "lm-studio") return;
-    electronAPI.invoke("provider:get-config", { provider: "lm-studio" }).then((config) => {
-      const cfg = config;
-      setLmStudioBaseUrl(cfg.baseUrl || "http://127.0.0.1:1234");
-    }).catch((err) => {
-      setLmStudioStatus(String(err));
-    });
-  }, [defaultProvider]);
-  const handleSaveLmStudioConfig = async () => {
-    setLmStudioBusy(true);
-    setLmStudioStatus(null);
+    let cancelled = false;
+    void electronAPI.invoke("provider:get-config", { provider: providerId }).then((cfg) => {
+      if (cancelled) return;
+      const next = cfg?.baseUrl ?? defaultBaseUrl;
+      setBaseUrl(next);
+    }).catch(() => setBaseUrl(defaultBaseUrl));
+    return () => {
+      cancelled = true;
+    };
+  }, [providerId, defaultBaseUrl]);
+  const persist = async (next) => {
+    setBaseUrl(next);
     try {
-      const result = await electronAPI.invoke("provider:set-config", {
-        provider: "lm-studio",
-        config: { baseUrl: lmStudioBaseUrl }
+      await electronAPI.invoke("provider:set-config", {
+        provider: providerId,
+        config: { baseUrl: next }
       });
-      setLmStudioBaseUrl(result.baseUrl || lmStudioBaseUrl);
-      await fetchProviderCatalog();
-      setLmStudioStatus("Configuracao salva.");
-    } catch (err) {
-      setLmStudioStatus(String(err));
-    } finally {
-      setLmStudioBusy(false);
+      setSavedAt(Date.now());
+    } catch {
     }
   };
-  const handleTestLmStudioConnection = async () => {
-    setLmStudioBusy(true);
-    setLmStudioStatus(null);
+  const refreshModels = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const message = await electronAPI.invoke("provider:test-api-key", {
-        provider: "lm-studio"
+      const res = await electronAPI.invoke("provider:list-models", {
+        provider: providerId
       });
+      setModels(res.models ?? []);
+      if (res.error) setError(res.error);
+      setLastChecked(Date.now());
       await fetchProviderCatalog();
-      setLmStudioStatus(message);
     } catch (err) {
-      setLmStudioStatus(String(err));
+      setError(err instanceof Error ? err.message : String(err));
+      setLastChecked(Date.now());
     } finally {
-      setLmStudioBusy(false);
+      setLoading(false);
     }
   };
-  const handleRefreshLmStudioModels = async () => {
-    setLmStudioBusy(true);
-    setLmStudioStatus(null);
-    try {
-      await fetchProviderCatalog();
-      setLmStudioStatus("Modelos atualizados.");
-    } catch (err) {
-      setLmStudioStatus(String(err));
-    } finally {
-      setLmStudioBusy(false);
-    }
-  };
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-2xl flex flex-col gap-6", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(SectionTitle, { title: "Providers" }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsCard, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-5 py-4", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium text-foreground", children: "Default provider" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mt-0.5", children: "Provider used when creating new threads." }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-3 flex flex-wrap gap-2", children: providerOptions.map((p) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-        SegmentButton,
-        {
-          label: p.label,
-          active: defaultProvider === p.value,
-          onClick: () => setDefaultProvider(p.value)
-        },
-        p.value
-      )) })
-    ] }) }),
-    defaultProvider === "lm-studio" && /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsCard, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-5 py-4", children: [
+  reactExports.useEffect(() => {
+    if (baseUrl) void refreshModels();
+  }, [baseUrl]);
+  const isOnline = lastChecked !== null && !error && models.length > 0;
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-lg border border-border/50 bg-card p-4 space-y-3", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium text-foreground", children: "Servidor do LM Studio" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mt-0.5", children: "URL local do servidor (ex: http://127.0.0.1:1234)." })
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm font-medium", children: label }),
+          lastChecked !== null && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: cn$1("inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px]", isOnline ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"), children: [
+            isOnline ? /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheck, { className: "size-3" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(CircleX, { className: "size-3" }),
+            isOnline ? "Online" : "Offline"
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "text-[11px] text-muted-foreground", children: providerId })
       ] }),
+      savedAt && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[11px] text-emerald-400", children: "Salvo" })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "block", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mb-1 block text-xs text-muted-foreground", children: "Base URL" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         "input",
         {
           type: "text",
-          value: lmStudioBaseUrl,
-          onChange: (e) => setLmStudioBaseUrl(e.target.value),
-          placeholder: "http://127.0.0.1:1234",
-          className: "mt-3 w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-border/80"
+          value: baseUrl,
+          onChange: (e) => setBaseUrl(e.target.value),
+          onBlur: () => persist(baseUrl),
+          placeholder: defaultBaseUrl,
+          className: "w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm font-mono outline-none focus:border-blue-500/50"
         }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-3 flex gap-2", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          ActionButton,
+      )
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs text-muted-foreground", children: [
+          "Modelos disponíveis ",
+          models.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-foreground", children: [
+            "(",
+            models.length,
+            ")"
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
           {
-            label: lmStudioBusy ? "Salvando..." : "Salvar URL",
-            onClick: handleSaveLmStudioConfig,
-            disabled: lmStudioBusy
-          }
-        ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          ActionButton,
-          {
-            label: lmStudioBusy ? "Atualizando..." : "Atualizar modelos",
-            onClick: handleRefreshLmStudioModels,
-            disabled: lmStudioBusy
-          }
-        ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          ActionButton,
-          {
-            label: lmStudioBusy ? "Testando..." : "Testar conexao",
-            onClick: handleTestLmStudioConnection,
-            disabled: lmStudioBusy
+            type: "button",
+            onClick: refreshModels,
+            disabled: loading,
+            className: "inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted disabled:opacity-50",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(RefreshCw, { className: cn$1("size-3", loading && "animate-spin") }),
+              loading ? "Buscando..." : "Buscar modelos"
+            ]
           }
         )
       ] }),
-      lmStudioStatus && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-3 text-xs text-muted-foreground", children: lmStudioStatus })
-    ] }) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs(SettingsCard, { children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-5 py-4 flex flex-col gap-3", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium text-foreground", children: "Default model" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mt-0.5", children: "Model used when creating new threads." })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-wrap gap-2", children: providerInfo.models.map((m) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-          SegmentButton,
-          {
-            label: m.label,
-            active: defaultModel === m.value,
-            onClick: () => setDefaultModel(defaultProvider, m.value)
-          },
-          m.value
-        )) })
-      ] }),
-      providerInfo.capabilities.supports_effort && /* @__PURE__ */ jsxRuntimeExports.jsx(
-        SettingsRow,
+      error && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400", children: error }),
+      !error && models.length === 0 && lastChecked !== null && !loading && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-xs text-muted-foreground", children: "Nenhum modelo retornado pelo servidor. Verifique se há modelos carregados." }),
+      models.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "max-h-48 overflow-auto rounded-md border border-border/50 bg-background/40 p-1", children: /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "divide-y divide-border/30", children: models.map((m) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "li",
         {
-          label: "Default effort",
-          description: "Effort level for new threads.",
-          children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-wrap gap-2 md:justify-end", children: EFFORTS.map((e) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-            SegmentButton,
-            {
-              label: e.label,
-              active: defaultEffort === e.value,
-              onClick: () => setDefaultEffort(e.value)
-            },
-            e.value
-          )) })
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        SettingsRow,
-        {
-          label: "Default permissions",
-          description: "Permission level for new threads.",
-          children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-wrap gap-2 md:justify-end", children: APPROVAL_MODES.map((a) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-            SegmentButton,
-            {
-              label: a.label,
-              active: defaultApprovalMode === a.value,
-              onClick: () => setDefaultApprovalMode(a.value)
-            },
-            a.value
-          )) })
-        }
-      )
+          className: "px-2 py-1.5 text-xs font-mono text-foreground/85",
+          children: m
+        },
+        m
+      )) }) })
     ] })
   ] });
-}
-function ApiKeysSection() {
-  const providerCatalog = useAppStore((s15) => s15.providerCatalog);
-  const apiKeyProviders = providerCatalog.filter(
-    (entry) => entry.capabilities.requires_api_key
-  );
-  const [providerApiKeys, setProviderApiKeys] = reactExports.useState({});
-  const [providerConfigured, setProviderConfigured] = reactExports.useState({});
-  const [providerLast4, setProviderLast4] = reactExports.useState({});
-  const [providerStatusMessages, setProviderStatusMessages] = reactExports.useState({});
-  const [providerBusy, setProviderBusy] = reactExports.useState({});
-  reactExports.useEffect(() => {
-    void Promise.all(
-      apiKeyProviders.map(async (entry) => {
-        try {
-          const status = await electronAPI.invoke("provider:api-key-status", {
-            provider: entry.id
-          });
-          setProviderConfigured((prev) => ({ ...prev, [entry.id]: status.configured }));
-          setProviderLast4((prev) => ({ ...prev, [entry.id]: status.last4 }));
-        } catch (err) {
-          console.error(`Erro ao carregar status da API key:`, err);
-        }
-      })
-    );
-  }, [apiKeyProviders]);
-  const handleSave = async (provider) => {
-    const apiKey = providerApiKeys[provider]?.trim() || "";
-    if (!apiKey) return;
-    setProviderBusy((prev) => ({ ...prev, [provider]: true }));
-    setProviderStatusMessages((prev) => ({ ...prev, [provider]: null }));
-    try {
-      await electronAPI.invoke("provider:set-api-key", { provider, apiKey });
-      const status = await electronAPI.invoke("provider:api-key-status", { provider });
-      setProviderConfigured((prev) => ({ ...prev, [provider]: status.configured }));
-      setProviderLast4((prev) => ({ ...prev, [provider]: status.last4 }));
-      setProviderApiKeys((prev) => ({ ...prev, [provider]: "" }));
-      setProviderStatusMessages((prev) => ({ ...prev, [provider]: "API key salva." }));
-    } catch (err) {
-      setProviderStatusMessages((prev) => ({ ...prev, [provider]: String(err) }));
-    } finally {
-      setProviderBusy((prev) => ({ ...prev, [provider]: false }));
-    }
-  };
-  const handleTest = async (provider) => {
-    setProviderBusy((prev) => ({ ...prev, [provider]: true }));
-    setProviderStatusMessages((prev) => ({ ...prev, [provider]: null }));
-    try {
-      const message = await electronAPI.invoke("provider:test-api-key", {
-        provider,
-        apiKey: providerApiKeys[provider]?.trim() || void 0
-      });
-      setProviderStatusMessages((prev) => ({ ...prev, [provider]: message }));
-    } catch (err) {
-      setProviderStatusMessages((prev) => ({ ...prev, [provider]: String(err) }));
-    } finally {
-      setProviderBusy((prev) => ({ ...prev, [provider]: false }));
-    }
-  };
-  const handleRemove = async (provider) => {
-    setProviderBusy((prev) => ({ ...prev, [provider]: true }));
-    setProviderStatusMessages((prev) => ({ ...prev, [provider]: null }));
-    try {
-      await electronAPI.invoke("provider:remove-api-key", { provider });
-      setProviderConfigured((prev) => ({ ...prev, [provider]: false }));
-      setProviderLast4((prev) => ({ ...prev, [provider]: null }));
-      setProviderApiKeys((prev) => ({ ...prev, [provider]: "" }));
-      setProviderStatusMessages((prev) => ({ ...prev, [provider]: "API key removida." }));
-    } catch (err) {
-      setProviderStatusMessages((prev) => ({ ...prev, [provider]: String(err) }));
-    } finally {
-      setProviderBusy((prev) => ({ ...prev, [provider]: false }));
-    }
-  };
-  if (apiKeyProviders.length === 0) {
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-2xl", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(SectionTitle, { title: "API Keys" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "No providers require API keys." })
-    ] });
-  }
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "max-w-2xl flex flex-col gap-6", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(SectionTitle, { title: "API Keys" }),
-    apiKeyProviders.map((entry) => {
-      const provider = entry.id;
-      const configured = providerConfigured[provider] ?? false;
-      const last4 = providerLast4[provider] ?? null;
-      const statusMessage = providerStatusMessages[provider];
-      const busy = providerBusy[provider] ?? false;
-      const inputValue = providerApiKeys[provider] ?? "";
-      const placeholder = provider === "openai" ? "sk-..." : "sk-ant-...";
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsCard, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "px-5 py-4", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start justify-between mb-4", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium text-foreground", children: entry.label }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mt-0.5", children: configured ? `Configured${last4 ? ` (···${last4})` : ""}` : "Not configured" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground/60 mt-0.5", children: "Stored locally with AES-256 encryption." })
-          ] }),
-          configured && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-emerald-500 font-medium", children: "Active" })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "input",
-          {
-            type: "password",
-            value: inputValue,
-            onChange: (e) => setProviderApiKeys((prev) => ({ ...prev, [provider]: e.target.value })),
-            placeholder,
-            className: "w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-border/80"
-          }
-        ),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-3 flex gap-2", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            ActionButton,
-            {
-              label: busy ? "Saving..." : "Save",
-              onClick: () => handleSave(provider),
-              disabled: busy || !inputValue.trim()
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            ActionButton,
-            {
-              label: busy ? "Testing..." : "Test",
-              onClick: () => handleTest(provider),
-              disabled: busy
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            ActionButton,
-            {
-              label: "Remove",
-              onClick: () => handleRemove(provider),
-              disabled: busy || !configured,
-              variant: "destructive"
-            }
-          )
-        ] }),
-        statusMessage && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-3 text-xs text-muted-foreground", children: statusMessage })
-      ] }) }, provider);
-    })
-  ] });
-}
-function ThemeButton({
-  icon,
-  label,
-  active,
-  onClick
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    "button",
-    {
-      type: "button",
-      onClick,
-      className: cn$1(
-        "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-        active ? "border-primary bg-primary/10 text-foreground" : "border-border bg-transparent text-muted-foreground hover:bg-accent"
-      ),
-      children: [
-        icon,
-        label
-      ]
-    }
-  );
-}
-function SegmentButton({
-  label,
-  active,
-  onClick
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "button",
-    {
-      type: "button",
-      onClick,
-      className: cn$1(
-        "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-        active ? "border-primary bg-primary/10 text-foreground" : "border-border bg-transparent text-muted-foreground hover:bg-accent"
-      ),
-      children: label
-    }
-  );
-}
-function ActionButton({
-  label,
-  onClick,
-  disabled,
-  variant = "default"
-}) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "button",
-    {
-      type: "button",
-      onClick,
-      disabled,
-      className: cn$1(
-        "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
-        variant === "destructive" ? "border-border text-red-500 hover:bg-red-500/10" : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"
-      ),
-      children: label
-    }
-  );
 }
 function FilePanel({ projectPath, onClose }) {
   const [tree, setTree] = reactExports.useState([]);
@@ -47753,7 +47825,6 @@ function App() {
   const fetchProjects = useAppStore((s15) => s15.fetchProjects);
   const fetchProviderCatalog = useAppStore((s15) => s15.fetchProviderCatalog);
   const activeView = useAppStore((s15) => s15.activeView);
-  const setActiveView = useAppStore((s15) => s15.setActiveView);
   const filePanelOpen = useAppStore((s15) => s15.filePanelOpen);
   const setFilePanelOpen = useAppStore((s15) => s15.setFilePanelOpen);
   const sidebarOpen = useAppStore((s15) => s15.sidebarOpen);
@@ -47776,7 +47847,7 @@ function App() {
   if (activeView === "settings") {
     return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative flex h-screen w-screen flex-col overflow-hidden min-h-0 app-window-content", children: [
       isMac && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "macos-drag-region", "aria-hidden": "true" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsScreen, { onBack: () => setActiveView("chat") })
+      /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsScreen, {})
     ] });
   }
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative flex h-screen w-screen flex-col overflow-hidden min-h-0 app-window-content", children: [

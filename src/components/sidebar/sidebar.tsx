@@ -113,6 +113,9 @@ export function Sidebar() {
   }, [projects, fetchThreads]);
 
   const handleToggleProject = (projectId: string, isOpen: boolean) => {
+    if (isOpen) {
+      setActiveProject(projectId);
+    }
     setExpandedProjects((prev) => {
       const next = new Set(prev);
       if (isOpen) {
@@ -239,7 +242,7 @@ export function Sidebar() {
   const isDark = theme === "dark";
 
   return (
-    <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-border/50 bg-sidebar-background">
+    <aside className="flex h-full min-h-0 w-[280px] shrink-0 flex-col border-r border-border/50 bg-sidebar-background">
       {/* Top actions — Codex style */}
       <div className="flex flex-col gap-0.5 px-3 pt-3 pb-1">
         <div className="flex items-center justify-between mb-1">
@@ -297,7 +300,7 @@ export function Sidebar() {
       </div>
 
       {/* Projects + Threads tree */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="px-2">
           {projects.length === 0 ? (
             <div className="px-3 py-8 text-center text-xs text-muted-foreground">
@@ -416,17 +419,26 @@ export function Sidebar() {
                                     Acao necessaria
                                   </span>
                                 )}
-                                {(typeof thread.lineAdditions === "number" ||
-                                  typeof thread.lineDeletions === "number") && (
+                                {((thread.lineAdditions ?? 0) !== 0 ||
+                                  (thread.lineDeletions ?? 0) !== 0) && (
                                   <span className="shrink-0 text-xs tabular-nums">
-                                    {typeof thread.lineAdditions === "number" && (
-                                      <span className="text-emerald-500">+{thread.lineAdditions}</span>
-                                    )}
                                     {typeof thread.lineAdditions === "number" &&
-                                      typeof thread.lineDeletions === "number" && " "}
-                                    {typeof thread.lineDeletions === "number" && (
-                                      <span className="text-red-500">-{thread.lineDeletions}</span>
-                                    )}
+                                      thread.lineAdditions !== 0 && (
+                                        <span className="text-emerald-500">
+                                          +{thread.lineAdditions}
+                                        </span>
+                                      )}
+                                    {typeof thread.lineAdditions === "number" &&
+                                      thread.lineAdditions !== 0 &&
+                                      typeof thread.lineDeletions === "number" &&
+                                      thread.lineDeletions !== 0 &&
+                                      " "}
+                                    {typeof thread.lineDeletions === "number" &&
+                                      thread.lineDeletions !== 0 && (
+                                        <span className="text-red-500">
+                                          -{thread.lineDeletions}
+                                        </span>
+                                      )}
                                   </span>
                                 )}
                                 <span className="shrink-0 text-[10px] text-muted-foreground/60">

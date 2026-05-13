@@ -4,7 +4,9 @@ import remarkGfm from "remark-gfm";
 import type { Message, ProviderId } from "@/lib/types";
 import { Bot, Brain, ChevronRight, ChevronDown, Search, FileText, Terminal as TerminalIcon, Pencil, Eye } from "lucide-react";
 import { parseOptions, OptionButtons } from "./option-buttons";
+import { AskUserPicker } from "./ask-user-picker";
 import { formatElapsed } from "@/lib/elapsed-time";
+import type { AskUserPayload } from "@/lib/types";
 
 const MODEL_LABELS: Record<string, string> = {
   "claude-opus-4-1-20250805": "Opus 4.1",
@@ -115,7 +117,12 @@ export function MessageBubble({
       {savedActivities.length > 0 && (
         <div className="mb-3 ml-7 flex w-[calc(100%-1.75rem)] flex-col gap-2">
           {savedActivities.map((act, i) => (
-            <ActivityItem key={i} activity={act} />
+            <ActivityItem
+              key={i}
+              activity={act}
+              isLatest={isLastAssistant && i === savedActivities.length - 1}
+              onAnswer={(text) => onSendMessage?.(text)}
+            />
           ))}
         </div>
       )}
@@ -137,6 +144,7 @@ interface StreamingActivity {
   kind: string;
   tool?: string;
   summary: string;
+  data?: unknown;
 }
 
 interface StreamingBubbleProps {
@@ -145,6 +153,7 @@ interface StreamingBubbleProps {
   provider?: ProviderId;
   model?: string;
   activities?: StreamingActivity[];
+  onAnswer?: (text: string) => void;
 }
 
 export function StreamingBubble({
@@ -152,6 +161,7 @@ export function StreamingBubble({
   elapsedSeconds,
   model,
   activities = [],
+  onAnswer,
 }: StreamingBubbleProps) {
   const latestActivity = activities[activities.length - 1];
   const statusTitle = content
@@ -209,6 +219,7 @@ export function StreamingBubble({
               activity={act}
               isLatest={i === activities.length - 1}
               elapsedSeconds={elapsedSeconds}
+              onAnswer={onAnswer}
             />
           ))}
         </div>
@@ -317,10 +328,12 @@ function ActivityItem({
   activity,
   isLatest,
   elapsedSeconds,
+  onAnswer,
 }: {
   activity: StreamingActivity;
   isLatest?: boolean;
   elapsedSeconds?: number;
+  onAnswer?: (text: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -330,6 +343,17 @@ function ActivityItem({
         summary={activity.summary}
         isLatest={isLatest}
         elapsedSeconds={elapsedSeconds}
+      />
+    );
+  }
+
+  if (activity.kind === "ask_user" && activity.data) {
+    const payload = activity.data as AskUserPayload;
+    return (
+      <AskUserPicker
+        payload={payload}
+        isLatest={isLatest}
+        onAnswer={(text) => onAnswer?.(text)}
       />
     );
   }

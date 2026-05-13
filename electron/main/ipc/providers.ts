@@ -1,23 +1,27 @@
+import type { BrowserWindow } from "electron";
 import { ipcMain } from "electron";
 import { getAllProviders, getProvider } from "../services/providers/factory.js";
 import type { ApiProviderId } from "../services/providers/types.js";
 import { LmStudioProvider } from "../services/providers/lm-studio.js";
+import { OllamaProvider } from "../services/providers/ollama.js";
 import {
   getLmStudioBaseUrl,
   setLmStudioBaseUrl,
+  getOllamaBaseUrl,
+  setOllamaBaseUrl,
 } from "../services/providers/provider-config.js";
 
-export function registerProviderHandlers(): void {
+export function registerProviderHandlers(_mainWindow: BrowserWindow): void {
   ipcMain.handle("provider:catalog", async () => {
     const providers = getAllProviders();
 
     await Promise.all(
       providers.map(async (provider) => {
-        if (provider instanceof LmStudioProvider) {
+        if (provider instanceof LmStudioProvider || provider instanceof OllamaProvider) {
           try {
             await provider.refreshCatalogModels();
           } catch {
-            // Keep fallback model list when LM Studio is offline.
+            // Keep fallback model list when server is offline.
           }
         }
       })
@@ -27,42 +31,13 @@ export function registerProviderHandlers(): void {
   });
 
   ipcMain.handle(
-    "provider:api-key-status",
-    async (_, args: { provider: string }) => {
-      const provider = getProvider(args.provider as ApiProviderId);
-      return provider.getApiKeyStatus();
-    }
-  );
-
-  ipcMain.handle(
-    "provider:set-api-key",
-    async (_, args: { provider: string; apiKey: string }) => {
-      const provider = getProvider(args.provider as ApiProviderId);
-      await provider.setApiKey(args.apiKey);
-    }
-  );
-
-  ipcMain.handle(
-    "provider:remove-api-key",
-    async (_, args: { provider: string }) => {
-      const provider = getProvider(args.provider as ApiProviderId);
-      await provider.removeApiKey();
-    }
-  );
-
-  ipcMain.handle(
-    "provider:test-api-key",
-    async (_, args: { provider: string; apiKey?: string }) => {
-      const provider = getProvider(args.provider as ApiProviderId);
-      return provider.testApiKey(args.apiKey);
-    }
-  );
-
-  ipcMain.handle(
     "provider:get-config",
     async (_, args: { provider: string }) => {
       if (args.provider === "lm-studio") {
         return { baseUrl: getLmStudioBaseUrl() };
+      }
+      if (args.provider === "ollama") {
+        return { baseUrl: getOllamaBaseUrl() };
       }
       return {};
     }
@@ -75,7 +50,31 @@ export function registerProviderHandlers(): void {
         const next = setLmStudioBaseUrl(args.config.baseUrl || "");
         return { baseUrl: next };
       }
+      if (args.provider === "ollama") {
+        const next = setOllamaBaseUrl(args.config.baseUrl || "");
+        return { baseUrl: next };
+      }
       return {};
+    }
+  );
+
+  ipcMain.handle(
+    "provider:list-models",
+    async (_, args: { provider: string }) => {
+      const provider = getProvider(args.provider as ApiProviderId);
+      if (!(provider instanceof LmStudioProvider) && !(provider instanceof OllamaProvider)) {
+        return { models: [] as string[] };
+      }
+      try {
+        const models = await provider.fetchModelValues();
+        await provider.refreshCatalogModels();
+        return { models };
+      } catch (err) {
+        return {
+          models: [] as string[],
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
     }
   );
 }

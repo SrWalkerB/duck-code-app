@@ -4,9 +4,11 @@ import { app } from "electron";
 
 const PROVIDER_CONFIG_FILE = "provider-config.json";
 const DEFAULT_LM_STUDIO_BASE_URL = "http://127.0.0.1:1234";
+const DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434";
 
 interface ProviderConfigStore {
   lmStudioBaseUrl?: string;
+  ollamaBaseUrl?: string;
 }
 
 function getFilePath(): string {
@@ -46,6 +48,19 @@ export function setLmStudioBaseUrl(url: string): string {
   const normalized = normalizeBaseUrl(url);
   const store = readStore();
   store.lmStudioBaseUrl = normalized;
+  writeStore(store);
+  return normalized;
+}
+
+export function getOllamaBaseUrl(): string {
+  const store = readStore();
+  return normalizeBaseUrl(store.ollamaBaseUrl || DEFAULT_OLLAMA_BASE_URL);
+}
+
+export function setOllamaBaseUrl(url: string): string {
+  const normalized = normalizeBaseUrl(url);
+  const store = readStore();
+  store.ollamaBaseUrl = normalized;
   writeStore(store);
   return normalized;
 }

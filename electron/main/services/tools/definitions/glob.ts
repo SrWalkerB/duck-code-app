@@ -67,24 +67,40 @@ Returns matching file paths sorted by modification time (most recently modified 
       ? resolveSafe(ctx.projectPath, input.path)
       : ctx.projectPath;
 
+    // Validate that search directory exists and is a directory
+    try {
+      const dirStat = await stat(searchDir);
+      if (!dirStat.isDirectory()) {
+        return { success: false, output: `${input.path || "."} is not a directory.` };
+      }
+    } catch {
+      return { success: false, output: `Directory not found: ${input.path || "."}` };
+    }
+
     const entries: FileEntry[] = [];
     await collectFiles(searchDir, ctx.projectPath, 0, entries);
 
     // Filter by glob pattern
-    const matched = entries
+    const allMatched = entries
       .filter((e) => minimatch(e.relativePath, input.pattern, { dot: false }))
-      .sort((a, b) => b.mtime - a.mtime) // most recent first
-      .slice(0, MAX_RESULTS);
+      .sort((a, b) => b.mtime - a.mtime); // most recent first
+
+    const truncated = allMatched.length > MAX_RESULTS;
+    const matched = allMatched.slice(0, MAX_RESULTS);
 
     if (matched.length === 0) {
       return { success: true, output: "No files matched the pattern." };
     }
 
-    const output = matched.map((e) => e.relativePath).join("\n");
+    let output = matched.map((e) => e.relativePath).join("\n");
+    if (truncated) {
+      output += `\n... (truncated: showing ${MAX_RESULTS} of ${allMatched.length} matches)`;
+    }
+
     return {
       success: true,
       output,
-      metadata: { matchCount: matched.length },
+      metadata: { matchCount: matched.length, totalMatches: allMatched.length, truncated },
     };
   },
 });

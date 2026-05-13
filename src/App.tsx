@@ -12,7 +12,6 @@ function App() {
   const fetchProjects = useAppStore((s) => s.fetchProjects);
   const fetchProviderCatalog = useAppStore((s) => s.fetchProviderCatalog);
   const activeView = useAppStore((s) => s.activeView);
-  const setActiveView = useAppStore((s) => s.setActiveView);
   const filePanelOpen = useAppStore((s) => s.filePanelOpen);
   const setFilePanelOpen = useAppStore((s) => s.setFilePanelOpen);
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
@@ -40,7 +39,7 @@ function App() {
     return (
       <div className="relative flex h-screen w-screen flex-col overflow-hidden min-h-0 app-window-content">
         {isMac && <div className="macos-drag-region" aria-hidden="true" />}
-        <SettingsScreen onBack={() => setActiveView("chat")} />
+        <SettingsScreen />
       </div>
     );
   }

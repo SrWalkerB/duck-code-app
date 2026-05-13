@@ -25,6 +25,8 @@ import { ListFilesTool } from "./list-files.js";
 import { RenameFileTool } from "./rename-file.js";
 import { CreateDirectoryTool } from "./create-directory.js";
 import { BashTool } from "./bash.js";
+import { AskUserTool } from "./ask-user.js";
+import { TodoWriteTool } from "./todo-write.js";
 
 export const TOOL_REGISTRY: ToolDef<any>[] = [
   ReadFileTool,
@@ -37,6 +39,8 @@ export const TOOL_REGISTRY: ToolDef<any>[] = [
   RenameFileTool,
   CreateDirectoryTool,
   BashTool,
+  AskUserTool,
+  TodoWriteTool,
 ];
 
 /** Find a tool by its name. Returns undefined if not found. */

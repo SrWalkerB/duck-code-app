@@ -17,6 +17,7 @@ const EFFORTS = [
 ];
 
 const APPROVAL_MODES = [
+  { label: "Sem tools", value: "no-tools" },
   { label: "Suggest", value: "suggest" },
   { label: "Auto-edit", value: "auto-edit" },
   { label: "Full auto", value: "full-auto" },

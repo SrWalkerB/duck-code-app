@@ -5,8 +5,13 @@ import { join } from "node:path";
 import { prisma } from "../services/prisma.js";
 import { getProvider } from "../services/providers/factory.js";
 import type { ApiProviderId, ApprovalMode, ProviderHistoryMessage } from "../services/providers/types.js";
-import { runWithTools, type ApprovalRequest } from "../services/tools/tool-executor.js";
+import { runWithOpenAITools, detectLanguage } from "../services/tools/tool-executor-openai.js";
+import type { ApprovalRequest } from "../services/tools/tool-execution.js";
 import { getLogs, logRequest, logResponse } from "../services/tools/tool-logger.js";
+import {
+  DEFAULT_TITLE_PATTERN,
+  generateAndApplyThreadTitle,
+} from "../services/threads/auto-title.js";
 
 const activeStreams = new Map<string, AbortController>();
 const pendingApprovals = new Map<string, (approved: boolean) => void>();
@@ -40,7 +45,7 @@ function parseDiffStat(summary: string): { additions: number; deletions: number 
 
 function runGitNumstat(cwd: string): Promise<{ additions: number; deletions: number } | null> {
   return new Promise((resolve) => {
-    execFile("git", ["diff", "--numstat"], { cwd }, (error, stdout) => {
+    execFile("git", ["diff", "--numstat", "--", "."], { cwd }, (error, stdout) => {
       if (error) {
         resolve(null);
         return;
@@ -181,6 +186,23 @@ async function streamResponse(
   const abortController = new AbortController();
   activeStreams.set(threadId, abortController);
 
+  const isFirstUserMessage =
+    messages.filter((m) => m.role === "user").length === 1;
+  const hasDefaultTitle = DEFAULT_TITLE_PATTERN.test(thread.title.trim());
+  if (isFirstUserMessage && hasDefaultTitle) {
+    void generateAndApplyThreadTitle(
+      mainWindow,
+      {
+        id: thread.id,
+        projectId: thread.projectId,
+        title: thread.title,
+        provider: thread.provider,
+        model: thread.model,
+      },
+      _content
+    );
+  }
+
   const startedAt = Date.now();
   let chunkCount = 0;
   let deltaChars = 0;
@@ -191,7 +213,7 @@ async function streamResponse(
 
   try {
     console.log(
-      `[stream] Starting stream for thread=${threadId} runId=${runId} provider=${thread.provider} model=${thread.model} approval=${thread.approvalMode || "suggest"} hasSession=${Boolean(thread.sessionId)} historyMessages=${history.length} projectPath=${thread.project?.path || "none"} nativeTools=${provider.supportsNativeTools}`
+      `[stream] Starting stream for thread=${threadId} runId=${runId} provider=${thread.provider} model=${thread.model} approval=${thread.approvalMode || "suggest"} hasSession=${Boolean(thread.sessionId)} historyMessages=${history.length} projectPath=${thread.project?.path || "none"} toolMode=${provider.toolMode}`
     );
 
     const sendRequest: import("../services/providers/types.js").SendMessageRequest = {
@@ -261,12 +283,29 @@ async function streamResponse(
 
     let result: import("../services/providers/types.js").SendMessageResult;
 
-    if (provider.supportsNativeTools) {
-      // CLI providers handle tools natively
+    // "no-tools" mode bypasses the tool-calling layer — pure chat streaming.
+    // Useful for working on the agent loop / prompt / streaming UX in isolation.
+    const noToolsMode = (thread.approvalMode || "suggest") === "no-tools";
+
+    if (noToolsMode) {
+      console.log(`[stream] no-tools mode — calling provider directly without tools`);
+      const lang = detectLanguage(_content);
+      const langLine =
+        lang === "pt"
+          ? "Responda SEMPRE em português brasileiro, mesmo se mensagens anteriores estiverem em outro idioma."
+          : lang === "es"
+          ? "Responda SIEMPRE en español."
+          : "Always respond in the same language as the user's last message.";
+      sendRequest.systemPrompt = [
+        "Você é um assistente de programação útil e direto, integrado a um editor de código local.",
+        langLine,
+        "Não emita tokens de controle como <|channel|>, <|message|>, <|end|> ou <|return|> — escreva apenas a resposta em texto natural.",
+        "Não invente contexto de conversas anteriores. Responda apenas o que foi perguntado nesta mensagem.",
+      ].join("\n");
       result = await provider.sendMessageStream(sendRequest, handleChunk, abortController.signal);
     } else {
-      // API providers use the ToolExecutor middleware
-      result = await runWithTools({
+      // OpenAI-compatible providers use structured tool calling
+      result = await runWithOpenAITools({
         provider,
         request: sendRequest,
         threadId,
@@ -298,6 +337,7 @@ async function streamResponse(
         metadata: JSON.stringify({
           runId,
           provider: thread.provider,
+          model: thread.model,
           costUsd: result.costUsd,
           durationMs: result.durationMs,
           lineAdditions,

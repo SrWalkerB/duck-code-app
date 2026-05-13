@@ -7,7 +7,7 @@ export interface Project {
   updatedAt: string;
 }
 
-export type ApprovalMode = "suggest" | "auto-edit" | "full-auto";
+export type ApprovalMode = "no-tools" | "suggest" | "auto-edit" | "full-auto";
 
 export interface Thread {
   id: string;
@@ -24,12 +24,7 @@ export interface Thread {
   updatedAt: string;
 }
 
-export type ProviderId =
-  | "claude"
-  | "openai"
-  | "codex"
-  | "claude-code"
-  | "lm-studio";
+export type ProviderId = "lm-studio" | "ollama";
 
 export interface ProviderModel {
   label: string;
@@ -76,12 +71,27 @@ export interface ChatErrorPayload {
   message: string;
 }
 
+export interface AskUserOption {
+  label: string;
+  description?: string;
+}
+export interface AskUserQuestion {
+  question: string;
+  header?: string;
+  options: AskUserOption[];
+  multiSelect?: boolean;
+}
+export interface AskUserPayload {
+  questions: AskUserQuestion[];
+}
+
 export interface ChatActivityPayload {
   runId: string;
   activity: {
-    kind: "tool_call" | "tool_result" | "info";
+    kind: "tool_call" | "tool_result" | "info" | "ask_user";
     tool?: string;
     summary: string;
+    data?: unknown;
   };
 }
 
@@ -95,3 +105,4 @@ export interface ChatToolApprovalPayload {
   args: Record<string, unknown>;
   description: string;
 }
+

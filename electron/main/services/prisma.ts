@@ -81,4 +81,48 @@ export async function ensureDatabase(): Promise<void> {
   await prisma.$executeRawUnsafe(`
     CREATE INDEX IF NOT EXISTS idx_tool_logs_thread_id ON tool_logs(thread_id)
   `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS benchmark_runs (
+      id TEXT PRIMARY KEY,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      providers_json TEXT NOT NULL,
+      profiles_json TEXT NOT NULL,
+      total_models INTEGER NOT NULL,
+      total_cases INTEGER NOT NULL,
+      succeeded_cases INTEGER NOT NULL,
+      failed_cases INTEGER NOT NULL,
+      recommended_provider TEXT,
+      recommended_model TEXT
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS benchmark_results (
+      id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      model TEXT NOT NULL,
+      profile TEXT NOT NULL,
+      duration_ms INTEGER NOT NULL,
+      output_chars INTEGER NOT NULL,
+      chars_per_second REAL NOT NULL,
+      success INTEGER NOT NULL,
+      error TEXT,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (run_id) REFERENCES benchmark_runs(id) ON DELETE CASCADE
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_benchmark_results_run_id ON benchmark_results(run_id)
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_benchmark_results_profile ON benchmark_results(profile)
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS idx_benchmark_runs_created_at ON benchmark_runs(created_at)
+  `);
 }

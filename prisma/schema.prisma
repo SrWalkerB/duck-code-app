@@ -47,3 +47,38 @@ model Message {
 
   @@map("messages")
 }
+
+model BenchmarkRun {
+  id                 String            @id @default(uuid())
+  createdAt          DateTime          @default(now()) @map("created_at")
+  providersJson      String            @map("providers_json")
+  profilesJson       String            @map("profiles_json")
+  totalModels        Int               @map("total_models")
+  totalCases         Int               @map("total_cases")
+  succeededCases     Int               @map("succeeded_cases")
+  failedCases        Int               @map("failed_cases")
+  recommendedProvider String?          @map("recommended_provider")
+  recommendedModel   String?           @map("recommended_model")
+  results            BenchmarkResult[]
+
+  @@map("benchmark_runs")
+}
+
+model BenchmarkResult {
+  id            String       @id @default(uuid())
+  runId         String       @map("run_id")
+  provider      String
+  model         String
+  profile       String
+  durationMs    Int          @map("duration_ms")
+  outputChars   Int          @map("output_chars")
+  charsPerSecond Float       @map("chars_per_second")
+  success       Int
+  error         String?
+  createdAt     DateTime     @default(now()) @map("created_at")
+  run           BenchmarkRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId], map: "idx_benchmark_results_run_id")
+  @@index([profile], map: "idx_benchmark_results_profile")
+  @@map("benchmark_results")
+}

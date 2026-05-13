@@ -13,7 +13,7 @@ export function registerAllHandlers(mainWindow: BrowserWindow): void {
   registerThreadHandlers();
   registerMessageHandlers(mainWindow);
   registerDialogHandlers();
-  registerProviderHandlers();
+  registerProviderHandlers(mainWindow);
   registerShellHandlers();
   registerGitHandlers();
   registerFileHandlers(mainWindow);

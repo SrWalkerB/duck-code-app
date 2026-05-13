@@ -19,7 +19,6 @@ import { useSettingsStore } from "@/stores/settings-store";
 import type { CodeEditorId } from "@/stores/settings-store";
 import {
   Sparkles,
-  KeyRound,
   FolderOpen,
   Globe,
   Terminal,
@@ -27,9 +26,23 @@ import {
   GitBranch,
   ChevronDown,
   ScrollText,
+  Code2,
 } from "lucide-react";
 import { getProviderEntry } from "@/lib/providers";
 import { cn } from "@/lib/utils";
+
+function getAssistantMessageModel(metadata: string | null, fallback?: string): string | undefined {
+  if (!metadata) return fallback;
+  try {
+    const parsed = JSON.parse(metadata) as { model?: unknown };
+    if (typeof parsed.model === "string" && parsed.model.trim()) {
+      return parsed.model;
+    }
+  } catch {
+    // Ignore invalid metadata payloads.
+  }
+  return fallback;
+}
 
 export function ChatArea() {
   const {
@@ -47,6 +60,10 @@ export function ChatArea() {
     messageQueue,
     enqueueMessage,
     removeQueuedMessage,
+    filePanelOpen,
+    setFilePanelOpen,
+    setTerminalPanelOpen,
+    openTerminalPanel,
   } = useAppStore();
 
   const {
@@ -56,10 +73,10 @@ export function ChatArea() {
     streamingError,
   } = useChat();
 
-  const [provider, setProvider] = useState<ProviderId>("openai");
+  const [provider, setProvider] = useState<ProviderId>("lm-studio");
   const [model, setModel] = useState("gpt-5.1-codex-mini");
   const [effort, setEffort] = useState("medium");
-  const [approvalMode, setApprovalMode] = useState<ApprovalMode>("suggest");
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>("no-tools");
   const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null);
   const [streamClock, setStreamClock] = useState(() => Date.now());
   const [logsPanelOpen, setLogsPanelOpen] = useState(false);
@@ -154,23 +171,16 @@ export function ChatArea() {
   // Sync provider/model/effort from active thread
   useEffect(() => {
     if (activeThread) {
-      setProvider(activeThread.provider || "openai");
+      setProvider((activeThread.provider as ProviderId) || "lm-studio");
       setModel(activeThread.model);
       setEffort(activeThread.effort || "medium");
-      setApprovalMode((activeThread.approvalMode as ApprovalMode) || "suggest");
+      setApprovalMode((activeThread.approvalMode as ApprovalMode) || "no-tools");
     }
   }, [activeThread]);
 
-  // Check API key status when provider changes
+  // Local providers (LM Studio / Ollama) don't require API keys.
   useEffect(() => {
-    setApiKeyConfigured(null);
-    electronAPI
-      .invoke("provider:api-key-status", { provider })
-      .then((status) => {
-        const s = status as { configured: boolean };
-        setApiKeyConfigured(s.configured);
-      })
-      .catch(() => setApiKeyConfigured(false));
+    setApiKeyConfigured(true);
   }, [provider]);
 
   const handleProviderChange = useCallback(
@@ -267,7 +277,7 @@ export function ChatArea() {
         console.error("Erro ao sincronizar thread:", err);
       }
 
-      sendMessage(content);
+      sendMessage(content, { provider, model });
     },
     [activeThreadId, model, provider, effort, approvalMode, sendMessage, apiKeyConfigured]
   );
@@ -450,6 +460,11 @@ export function ChatArea() {
           <div className="flex items-center gap-2">
             {hasInstalledEditor && (
               <>
+                <HeaderButton
+                  icon={<Code2 className="size-4" />}
+                  tooltip="Abrir diretorio da thread no editor"
+                  onClick={() => handleOpenThreadInEditor()}
+                />
                 <label className="sr-only" htmlFor="code-editor-select">
                   Editor de codigo
                 </label>
@@ -471,24 +486,36 @@ export function ChatArea() {
             <div className="h-4 w-px bg-border/60" />
             <HeaderButton
               icon={<FolderOpen className="size-4" />}
-              tooltip="Abrir diretorio da thread no editor"
-              disabled={!hasInstalledEditor}
-              onClick={handleOpenThreadInEditor}
+              tooltip={
+                filePanelOpen
+                  ? "Fechar explorador de arquivos"
+                  : "Explorar arquivos do projeto"
+              }
+              active={filePanelOpen}
+              onClick={() => {
+                if (!filePanelOpen && logsPanelOpen) {
+                  setLogsPanelOpen(false);
+                }
+                setFilePanelOpen(!filePanelOpen);
+              }}
             />
             <HeaderButton
               icon={<Terminal className="size-4" />}
-              tooltip="Terminal"
+              tooltip={isTerminalActive ? "Fechar terminal" : "Terminal"}
               active={isTerminalActive}
               onClick={() => {
-                useAppStore.getState().openTerminalPanel(activeProject.path);
+                if (isTerminalActive) {
+                  setTerminalPanelOpen(false);
+                } else {
+                  openTerminalPanel(activeProject.path);
+                }
               }}
             />
             <HeaderButton
               icon={<Globe className="size-4" />}
-              tooltip="Preview no browser"
-              onClick={() => {
-                electronAPI.invoke("shell:open-url", { url: "http://localhost:3000" });
-              }}
+              tooltip="Preview no browser (indisponivel)"
+              disabled
+              onClick={() => {}}
             />
             <HeaderButton
               icon={<ScrollText className="size-4" />}
@@ -528,7 +555,11 @@ export function ChatArea() {
                 key={msg.id}
                 message={msg}
                 provider={activeThread?.provider as ProviderId | undefined}
-                model={activeThread?.model}
+                model={
+                  msg.role === "assistant"
+                    ? getAssistantMessageModel(msg.metadata, activeThread?.model)
+                    : undefined
+                }
                 onSendMessage={handleSend}
                 isLastAssistant={isLastAssistant}
               />
@@ -539,9 +570,10 @@ export function ChatArea() {
             <StreamingBubble
               content={streamingContent}
               elapsedSeconds={streamElapsedSeconds}
-              provider={provider}
-              model={model}
+              provider={threadStream?.provider ?? provider}
+              model={threadStream?.model ?? model}
               activities={streamingActivities}
+              onAnswer={handleSend}
             />
           )}
 
@@ -572,18 +604,6 @@ export function ChatArea() {
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
-
-      {/* API key warning */}
-      {apiKeyConfigured === false && (
-        <div className="mx-auto max-w-3xl w-full px-6">
-          <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 mb-2">
-            <KeyRound className="size-4 text-amber-500 shrink-0" />
-            <p className="text-xs text-amber-600 dark:text-amber-400">
-              API key do <strong>{providerInfo.label}</strong> nao configurada. Va em <strong>Settings &gt; API Keys</strong> para cadastrar.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Message Queue */}
       <MessageQueue

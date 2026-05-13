@@ -10,6 +10,7 @@
 import { findToolByName } from "./definitions/index.js";
 import type { ToolUseContext, ToolResult } from "./tool.js";
 import * as logger from "./tool-logger.js";
+import { formatZodError } from "./schema/format-zod-error.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -180,9 +181,10 @@ export async function runToolUse(
   // 2. Validate input with Zod schema
   const parseResult = tool.inputSchema.safeParse(normalizedArgs);
   if (!parseResult.success) {
-    const error = `Invalid input for ${tool.name}: ${parseResult.error.message}`;
+    const humanMsg = formatZodError(parseResult.error);
+    const error = `Invalid arguments for ${tool.name}. ${humanMsg}`;
     await logger.logToolResult(ctx.threadId, ctx.runId, tool.name, { success: false, output: error });
-    ctx.onActivity({ kind: "tool_result", tool: tool.name, summary: `Validation error: ${error.slice(0, 100)}` });
+    ctx.onActivity({ kind: "tool_result", tool: tool.name, summary: `Validation error: ${humanMsg.slice(0, 120)}` });
     return { success: false, output: error };
   }
   const validatedInput = parseResult.data;

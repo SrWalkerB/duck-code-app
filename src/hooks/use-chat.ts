@@ -2,6 +2,7 @@ import { useEffect, useCallback, useRef } from "react";
 import { electronAPI } from "@/lib/electron-api";
 import { useAppStore } from "@/stores/app-store";
 import type {
+  ProviderId,
   ChatStreamPayload,
   ChatCompletePayload,
   ChatErrorPayload,
@@ -9,6 +10,11 @@ import type {
   ChatDonePayload,
   ChatToolApprovalPayload,
 } from "@/lib/types";
+
+interface StreamConfigSnapshot {
+  provider?: ProviderId;
+  model?: string;
+}
 
 /**
  * Manages IPC listeners for ALL actively streaming threads,
@@ -25,7 +31,7 @@ function useStreamListeners() {
     setThreadToolApproval,
   } = useAppStore();
 
-  const sendMessageRef = useRef<((threadId: string, content: string) => Promise<void>) | null>(null);
+  const sendMessageRef = useRef<((threadId: string, content: string, config?: StreamConfigSnapshot) => Promise<void>) | null>(null);
 
   // Track which thread IDs we have listeners for
   const listenersRef = useRef<Map<string, () => void>>(new Map());
@@ -128,7 +134,10 @@ function useStreamListeners() {
                 } catch (err) {
                   console.error("Erro ao sincronizar thread para mensagem enfileirada:", err);
                 }
-                sendMessageRef.current?.(next.threadId, next.content);
+                sendMessageRef.current?.(next.threadId, next.content, {
+                  provider: next.provider,
+                  model: next.model,
+                });
               }, 50);
             }
           }
@@ -177,7 +186,7 @@ export function useChat() {
   const streamingError = threadStream?.error ?? null;
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, config?: StreamConfigSnapshot) => {
       if (!activeThreadId || !content.trim()) return;
 
       addOptimisticMessage({
@@ -191,7 +200,7 @@ export function useChat() {
 
       const runId = crypto.randomUUID();
       console.log("[sendMessage] threadId:", activeThreadId, "runId:", runId);
-      startStream(activeThreadId, runId);
+      startStream(activeThreadId, runId, config);
 
       try {
         await electronAPI.invoke("message:send", {
@@ -210,7 +219,7 @@ export function useChat() {
 
   // Thread-specific sendMessage for queued messages
   const sendMessageForThread = useCallback(
-    async (threadId: string, content: string) => {
+    async (threadId: string, content: string, config?: StreamConfigSnapshot) => {
       if (!threadId || !content.trim()) return;
 
       addOptimisticMessage({
@@ -223,7 +232,7 @@ export function useChat() {
       });
 
       const runId = crypto.randomUUID();
-      startStream(threadId, runId);
+      startStream(threadId, runId, config);
 
       try {
         await electronAPI.invoke("message:send", {

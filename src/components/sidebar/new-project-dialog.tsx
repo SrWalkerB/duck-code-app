@@ -39,6 +39,8 @@ export function NewProjectDialog({
   const [loading, setLoading] = useState(false);
 
   const fetchProjects = useAppStore((s) => s.fetchProjects);
+  const setActiveProject = useAppStore((s) => s.setActiveProject);
+  const setActiveThread = useAppStore((s) => s.setActiveThread);
 
   const handlePickFolder = async () => {
     console.log("[renderer] handlePickFolder called");
@@ -61,8 +63,14 @@ export function NewProjectDialog({
     if (!name.trim() || !path.trim()) return;
     setLoading(true);
     try {
-      await electronAPI.invoke("project:create", { name: name.trim(), path: path.trim(), color });
+      const project = (await electronAPI.invoke("project:create", {
+        name: name.trim(),
+        path: path.trim(),
+        color,
+      })) as { id: string };
       await fetchProjects();
+      setActiveProject(project.id);
+      setActiveThread(null);
       onOpenChange(false);
       setName("");
       setPath("");

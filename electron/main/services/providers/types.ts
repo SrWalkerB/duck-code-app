@@ -1,9 +1,34 @@
-export type ApiProviderId =
-  | "claude"
-  | "openai"
-  | "codex"
-  | "claude-code"
-  | "lm-studio";
+export type ApiProviderId = "lm-studio" | "ollama";
+
+// ---------------------------------------------------------------------------
+// Tool mode — determines how tool calling is handled for each provider.
+// Currently all supported providers use OpenAI-compatible structured tools.
+// ---------------------------------------------------------------------------
+
+export type ToolMode = "openai";
+
+// ---------------------------------------------------------------------------
+// OpenAI-compatible tool calling types
+// ---------------------------------------------------------------------------
+
+export interface OpenAIToolCall {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+}
+
+export interface OpenAIFunctionTool {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Provider models & capabilities
+// ---------------------------------------------------------------------------
 
 export interface ProviderModel {
   label: string;
@@ -28,12 +53,20 @@ export interface ApiKeyStatus {
   last4: string | null;
 }
 
-export interface ProviderHistoryMessage {
-  role: "user" | "assistant";
-  content: string;
-}
+// ---------------------------------------------------------------------------
+// Messages — supports user, assistant (with optional tool_calls), and tool
+// ---------------------------------------------------------------------------
 
-export type ApprovalMode = "suggest" | "auto-edit" | "full-auto";
+export type ProviderHistoryMessage =
+  | { role: "user"; content: string }
+  | { role: "assistant"; content: string; tool_calls?: OpenAIToolCall[] }
+  | { role: "tool"; content: string; tool_call_id: string };
+
+// ---------------------------------------------------------------------------
+// Request / Result
+// ---------------------------------------------------------------------------
+
+export type ApprovalMode = "no-tools" | "suggest" | "auto-edit" | "full-auto";
 
 export interface SendMessageRequest {
   model: string;
@@ -43,6 +76,10 @@ export interface SendMessageRequest {
   message: string;
   history: ProviderHistoryMessage[];
   projectPath?: string;
+  /** OpenAI function tool schemas — passed to providers with toolMode "openai" */
+  tools?: OpenAIFunctionTool[];
+  /** Optional system prompt prepended as the first message. */
+  systemPrompt?: string;
 }
 
 export interface SendMessageResult {
@@ -50,6 +87,8 @@ export interface SendMessageResult {
   sessionId: string | null;
   costUsd: number;
   durationMs: number;
+  /** Structured tool calls returned by OpenAI-compatible providers */
+  toolCalls?: OpenAIToolCall[];
 }
 
 export interface StreamChunk {
@@ -57,15 +96,21 @@ export interface StreamChunk {
   text?: string;
   error?: string;
   activity?: {
-    kind: "tool_call" | "tool_result" | "info" | "thinking";
+    kind: "tool_call" | "tool_result" | "info" | "thinking" | "ask_user";
     tool?: string;
     summary: string;
+    /** Structured payload for kinds that need richer rendering (ask_user). */
+    data?: unknown;
   };
 }
 
+// ---------------------------------------------------------------------------
+// Provider runtime interface
+// ---------------------------------------------------------------------------
+
 export interface ProviderRuntime {
-  /** Whether this provider handles tool use internally (CLI providers). */
-  readonly supportsNativeTools: boolean;
+  /** How this provider handles tool use: "xml" | "openai" | "native-cli" */
+  readonly toolMode: ToolMode;
   getCatalogEntry(): ProviderCatalogEntry;
   getApiKeyStatus(): Promise<ApiKeyStatus>;
   setApiKey(apiKey: string): Promise<void>;

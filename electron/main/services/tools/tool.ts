@@ -7,15 +7,17 @@
 import { z } from "zod";
 
 // Re-export ApprovalMode from providers
-export type ApprovalMode = "suggest" | "auto-edit" | "full-auto";
+export type ApprovalMode = "no-tools" | "suggest" | "auto-edit" | "full-auto";
 
 // ---------------------------------------------------------------------------
 // Activity events emitted to the UI
 // ---------------------------------------------------------------------------
 export interface ActivityChunk {
-  kind: "tool_call" | "tool_result" | "info";
+  kind: "tool_call" | "tool_result" | "info" | "ask_user";
   tool?: string;
   summary: string;
+  /** Structured payload (e.g., ask_user questions) for richer UI rendering. */
+  data?: unknown;
 }
 
 // ---------------------------------------------------------------------------

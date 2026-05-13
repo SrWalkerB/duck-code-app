@@ -61,13 +61,7 @@ function applyTheme(theme: "dark" | "light") {
 }
 
 function isProvider(value: unknown): value is ProviderId {
-  return (
-    value === "claude" ||
-    value === "openai" ||
-    value === "codex" ||
-    value === "claude-code" ||
-    value === "lm-studio"
-  );
+  return value === "lm-studio" || value === "ollama";
 }
 
 function isCodeEditor(value: unknown): value is CodeEditorId {
@@ -88,17 +82,14 @@ const savedDefaultModels =
     : {};
 
 const initialDefaultModels: Record<ProviderId, string> = {
-  claude: savedDefaultModels.claude || fallbackModels.claude,
-  openai: savedDefaultModels.openai || fallbackModels.openai,
-  codex: savedDefaultModels.codex || fallbackModels.codex,
-  "claude-code": savedDefaultModels["claude-code"] || fallbackModels["claude-code"],
   "lm-studio": savedDefaultModels["lm-studio"] || fallbackModels["lm-studio"],
+  ollama: savedDefaultModels.ollama || fallbackModels.ollama,
 };
 
 const savedProvider = saved.defaultProvider;
 const initialDefaultProvider: ProviderId = isProvider(savedProvider)
   ? savedProvider
-  : "openai";
+  : "lm-studio";
 
 export const useSettingsStore = create<SettingsState>((set, get) => {
   const initialTheme = saved.theme === "light" ? "light" : "dark";

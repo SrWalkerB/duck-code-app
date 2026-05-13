@@ -24,10 +24,7 @@ export function buildDefaultModelsMap(
   catalog: ProviderCatalogEntry[]
 ): Record<ProviderId, string> {
   return {
-    claude: getProviderDefaultModel(catalog, "claude"),
-    openai: getProviderDefaultModel(catalog, "openai"),
-    codex: getProviderDefaultModel(catalog, "codex"),
-    "claude-code": getProviderDefaultModel(catalog, "claude-code"),
     "lm-studio": getProviderDefaultModel(catalog, "lm-studio"),
+    ollama: getProviderDefaultModel(catalog, "ollama"),
   };
 }
